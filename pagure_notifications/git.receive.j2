@@ -1,0 +1,10 @@
+<p>
+    <a href="{{json.msg.repo.full_url}}/c/{{json.msg.start_commit}}..{{json.msg.end_commit}}">
+    <strong><span data-mx-bg-color="#28a745" data-mx-color="#ffffff" data-mx-bg-color="#3c6eb4">{{json.msg.agent}} pushed {{json.msg.total_commits}} commit(s)</span></strong>
+    {% if json.msg.authors[0].name != json.msg.agent %}
+    by {{json.msg.authors[0].name}}
+    {% endif %}
+    to <code>{{json.msg.branch}}</code> branch of <strong>{{json.msg.project_fullname}}</strong>
+    <br/>
+    </a>
+</p>
