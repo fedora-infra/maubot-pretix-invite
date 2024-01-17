@@ -6,7 +6,7 @@ from aiohttp.web import Response
 from maubot import Plugin
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
-ACCEPTED_TOPICS = ["issue.new", "issue.comment.added", "git.receive"]
+ACCEPTED_TOPICS = ["issue.new", "git.receive"]
 
 
 class Config(BaseProxyConfig):
