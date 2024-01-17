@@ -1,0 +1,12 @@
+asyncpg-stubs
+black
+coverage[toml]
+maubot
+mypy
+pytest
+pytest-asyncio
+pytest-aiohttp
+pytest-cov
+respx
+ruff
+types-pytz

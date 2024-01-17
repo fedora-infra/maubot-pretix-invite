@@ -1,0 +1,5 @@
+asyncpg
+maubot
+maubot-fedora-messages
+mautrix
+pytz
