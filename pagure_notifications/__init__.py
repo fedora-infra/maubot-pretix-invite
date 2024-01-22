@@ -23,7 +23,7 @@ class PagureNotifications(Plugin):
     async def start(self):
         self.config.load_and_update()
         self.webapp.add_route("POST", "/notify", self.handle_request)
-        self.log.info(f"Webhook URL is: {self.webapp_url}notify")
+        self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
         print(self.webapp_url)
         self.log.error(self.config["projects"])
 
