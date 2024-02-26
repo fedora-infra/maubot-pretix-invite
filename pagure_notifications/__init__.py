@@ -6,7 +6,7 @@ from aiohttp.web import Response
 from maubot import Plugin
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
-ACCEPTED_TOPICS = ["issue.new", "git.receive"]
+ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
 class Config(BaseProxyConfig):
@@ -38,6 +38,8 @@ class PagureNotifications(Plugin):
         try:
             if message_topic == "git.receive":
                 project_name = json["msg"]["project_fullname"]
+            elif message_topic == "pull-request.new":
+                project_name = json["msg"]["pullrequest"]["project"]["fullname"]
             else:
                 project_name = json["msg"]["project"]["fullname"]
         except KeyError as e:
