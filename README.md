@@ -1,2 +1,2 @@
-# maubot-pagure-notifications
-A maubot plugin that consumes pagure webhook calls and sends messages to matrix
+# maubot-events
+A maubot plugin that helps facilitate Fedora virtual events that are run through Matrix
