@@ -119,4 +119,4 @@ class EventManagement(Plugin):
         Takes no arguments
         """
 
-        await evt.respond(f"maubot-fedora version {self.loader.meta.version}")
+        await evt.respond(f"maubot-events version {self.loader.meta.version}")
