@@ -86,3 +86,37 @@ class EventManagement(Plugin):
         #         self.log.error(f"Problem sending message to room {room}: {e}")
 
         return Response()
+
+    @command.new(name="help", help="list commands")
+    @command.argument("commandname", pass_raw=True, required=False)
+    async def bothelp(self, evt: MessageEvent, commandname: str) -> None:
+        """return help"""
+        output = []
+
+        if commandname:
+            # return the full help (docstring) for the given command
+            for cmd in self._get_handler_commands():
+                if commandname != cmd.__mb_name__:
+                    continue
+                output.append(cmd.__mb_full_help__)
+                break
+            else:
+                await evt.reply(f"`{commandname}` is not a valid command")
+                return
+        else:
+            # list all the commands with the help arg from command.new
+            for cmd in self._get_handler_commands():
+                output.append(
+                    f"* `{cmd.__mb_prefix__} {cmd.__mb_usage_args__}` - {cmd.__mb_help__}"
+                )
+        await evt.respond(NL.join(output))
+
+    @command.new(help="return information about this bot")
+    async def version(self, evt: MessageEvent) -> None:
+        """
+        Return the version of the plugin
+
+        Takes no arguments
+        """
+
+        await evt.respond(f"maubot-fedora version {self.loader.meta.version}")
