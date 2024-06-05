@@ -15,7 +15,7 @@ class Config(BaseProxyConfig):
         helper.copy("projects")
 
 
-class PagureNotifications(Plugin):
+class EventManagement(Plugin):
     @classmethod
     def get_config_class(cls):
         return Config
