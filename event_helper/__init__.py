@@ -136,7 +136,7 @@ class EventManagement(Plugin):
         all_users = {}
         # all_users.update({username: UserInfo()})
         all_users[username] = UserInfo()
-        await self.invite_user(room_id, all_users)
+        await self.room_methods.invite_user(room_id, all_users)
 
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
