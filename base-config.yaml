@@ -1,2 +1,3 @@
-pagure_instance: https://pagure.io/
-projects: {}
+pretix_instance_url: https://pretix.eu/
+allowlist:
+  - "@aaronhale:matrixbots.tinystage.test"

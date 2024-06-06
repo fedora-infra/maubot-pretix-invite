@@ -14,8 +14,8 @@ from .matrix_utils import MatrixUtils, UserInfo
 
 class Config(BaseProxyConfig):
     def do_update(self, helper: ConfigUpdateHelper):
-        helper.copy("pagure_instance")
-        helper.copy("projects")
+        helper.copy("pretix_instance_url")
+        helper.copy("allowlist")
 
 
 class EventManagement(Plugin):
