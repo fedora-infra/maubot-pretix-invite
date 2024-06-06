@@ -8,7 +8,7 @@ from maubot.handlers import command
 from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
-from .matrix_utils import MatrixUtils
+from .matrix_utils import MatrixUtils, UserInfo
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
@@ -134,7 +134,7 @@ class EventManagement(Plugin):
         # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
         # Ensure users are invited
         all_users = {}
-        all_users.update({username, {}})
+        all_users.update({username, UserInfo()})
         await self.invite_user(room_id, all_users)
 
         # Ensure users have correct power levels
