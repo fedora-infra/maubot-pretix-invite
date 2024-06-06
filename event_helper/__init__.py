@@ -7,7 +7,7 @@ from maubot import MessageEvent, Plugin
 from maubot.handlers import command
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
-ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
+# ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
 class Config(BaseProxyConfig):
