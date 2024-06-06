@@ -8,7 +8,7 @@ from maubot.handlers import command
 from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
-from matrix_utils import MatrixUtils
+from .matrix_utils import MatrixUtils
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
