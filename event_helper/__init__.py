@@ -132,6 +132,7 @@ class EventManagement(Plugin):
     async def bothelp(self, evt: MessageEvent, username: str) -> None:
         # Ensure room exists
         # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
+        room_id = evt.room_id
         # Ensure users are invited
         all_users = {}
         # all_users.update({username: UserInfo()})
