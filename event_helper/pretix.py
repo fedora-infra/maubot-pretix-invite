@@ -13,9 +13,20 @@ def question_id_to_header(question_id:str):
     return ""
 
 class Pretix:
-    def fetch_data(bearer_token: str, url: str) -> dict:
+
+    def __init__(self, instance_url, token):
+        self._instance_url = instance_url
+        self._token = token
+
+    @property
+    def base_url(self):
+        return self._instance_url + "/api/v1"
+
+    def fetch_data(self, organizer, event) -> dict:
+        url = self.base_url + "/organizers/{organizer}/events/{event}/orders/"
+
         headers = {
-            "Authorization": f"Bearer {bearer_token}"
+            "Authorization": f"Bearer {self._token}"
         }
         data = []
 
@@ -27,7 +38,7 @@ class Pretix:
             url = json_response.get('next')
         return data
 
-    def extract_answers(schema: dict) -> List[dict]:
+    def extract_answers(self, schema: dict) -> List[dict]:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
                 ticket_id = position['order']
@@ -50,7 +61,7 @@ class Pretix:
         return list(reduced_results.values())
 
 
-    def write_to_csv(entries: List[dict], file_name: str, display: bool = False) -> None:  # noqa: E501
+    def write_to_csv(self, entries: List[dict], file_name: str, display: bool = False) -> None:  # noqa: E501
         fieldnames = entries[0].keys()
         with open(file_name, mode='w+', newline='') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
@@ -65,14 +76,14 @@ class Pretix:
             csv_file.seek(0)
             print(csv_file.read())
 
-    def filter_dict(old_dict, your_keys):
+    def filter_dict(self, old_dict, your_keys):
         """filters a dictionary so it only contains the specified keys
         accomplishes this by constructing a new dictionary
         """
         return { your_key: old_dict[your_key] for your_key in your_keys }
 
-
-    def csv_to_data(csv_file:str) -> list[dict]:
+    
+    def csv_to_data(self, csv_file:str) -> list[dict]:
         """_summary_
 
         Args:
@@ -86,7 +97,7 @@ class Pretix:
             reader = csv.DictReader(csvfile)
             return list(reader)
 
-    def cleanup_csv_for_humans(csv_data:list[dict], filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> list[dict]:
+    def cleanup_csv_for_humans(self, csv_data:list[dict], filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> list[dict]:
         """Takes in a CSV data (dict-formatted) and returns dict-formatted data with unused columns removed
 
         Args:
@@ -98,7 +109,7 @@ class Pretix:
         return [filter_dict(d, filter_keys) for d in csv_data]
     
 
-    def filter_processed_data(csv_data:list[dict], processed_csv_data:list[dict], filter_key:str="Order code") -> list[dict]:
+    def filter_processed_data(self, csv_data:list[dict], processed_csv_data:list[dict], filter_key:str="Order code") -> list[dict]:
         """filters csv data to remove data thats already been processed
 
 
