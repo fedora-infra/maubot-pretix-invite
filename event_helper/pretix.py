@@ -14,13 +14,64 @@ def question_id_to_header(question_id:str):
 
 class Pretix:
 
-    def __init__(self, instance_url, token):
+    def __init__(self, instance_url, client_id, client_secret, redirect_uri):
         self._instance_url = instance_url
-        self._token = token
+        self.client_id = client_id
+        self._client_secret = client_secret
+        self.redirect_uri = redirect_uri
+
+    @property
+    def _has_token(self):
+        return self._token is not None and self._token != ""
+
+    @property
+    def _has_refresh_token(self):
+        return self._refresh_token is not None and self._refresh_token != ""
+
+    @property
+    def oauth_url(self):
+        return self.get_oauth_url()
+
+    def get_oauth_url(self, write=False):
+        # TODO: figure out what is needed to get write access - this isnt needed right now though
+        read_write = "read" if not write else ""
+
+        return self.base_url + f"/oauth/authorize?client_id={self.client_id}&response_type=code&scope=read&redirect_uri={self.redirect_uri}"
 
     @property
     def base_url(self):
         return self._instance_url + "/api/v1"
+
+    def _get_fresh_token_from_code(self, code, grant_type):
+        url = self.base_url + "/oauth/token"
+        application/x-www-form-urlencoded
+
+    def _refresh_token(self, code):
+        url = self.base_url + "/oauth/token"
+        application/x-www-form-urlencoded
+        _get_fresh_token_from_code()
+
+    def _fetch_token(self, grant_type, parameters={}):
+        url = self.base_url + "/oauth/token"
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {
+            "grant_type": grant_type
+        }
+        data.update(parameters)
+
+        response = requests.post(url, headers=headers, data=data)
+        response.raise_for_status()
+        json_response = response.json()
+        
+
+
+
+    def listen(self):
+        """spin up a web server to listen on a particular IP and port for the redirect code
+        """
+        pass
 
     def fetch_data(self, organizer, event) -> dict:
         url = self.base_url + "/organizers/{organizer}/events/{event}/orders/"
