@@ -5,7 +5,7 @@ from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
 
 from requests_oauthlib import OAuth2Session
-
+from .auth import Token 
 
 def question_id_to_header(question_id:str):
     if question_id == "fas":
@@ -18,13 +18,26 @@ def question_id_to_header(question_id:str):
 class Pretix:
 
     def __init__(self, instance_url, client_id, client_secret, redirect_uri):
-        
-        self.client = BackendApplicationClient(client_id=client_id)
-
-        self.oauth = OAuth2Session(client=client)
-
         self._instance_url = instance_url
-
+        self._client_secret = client_secret
+        self.client = BackendApplicationClient(client_id=client_id)
+        # most providers will ask you for extra credentials to be passed along
+        # when refreshing tokens, usually for authentication purposes.
+        # extra = {
+        #     'client_id': client_id,
+        #     'client_secret': r'potato',
+        # }
+        self.oauth = OAuth2Session(
+            client=client,
+            # token=token,
+            auto_refresh_url=self.token_url,
+            token_updater=self._update_token)#auto_refresh_kwargs=extra,
+    
+    def test_auth(self):
+        # test the auth
+        r = self.oauth.get(self.test_url)
+        r.raise_for_status()
+        
     @property
     def _has_token(self):
         return self._token is not None and self._token != ""
@@ -41,6 +54,19 @@ class Pretix:
     def token_url(self):
         return self.base_url + "/oauth/token"
 
+    @property
+    def test_url(self):
+        return self.base_url + "/organizers/(organizer)/events"
+
+    def _update_token(self, token:str):
+        """in-memory token storage
+
+        Args:
+            token (str): the token to store
+        """
+        self._token = Token.from_str(token)
+
+
     def get_auth_url(self, write=False):
         authorization_url, state = oauth.authorization_url(
             self.base_url + "/oauth/authorize"
@@ -51,16 +77,24 @@ class Pretix:
         # redirect_uri
         
         # TODO: figure out what is needed to get write access - this isnt needed right now though
-        read_write = "read" if not write else ""
+        # read_write = "read" if not write else ""
 
         # return self.base_url + f"/oauth/authorize?client_id={self.client_id}&response_type=code&scope=read&redirect_uri={self.redirect_uri}"
         return authorization_url
 
-    def _set_token_from_auth_callback(self, authorization_response):
-        return oauth.fetch_token(
+    def _set_token_from_auth_callback(self, authorization_response:str):
+        """complete the auth process by using the response from the oauth process to fetch a token
+
+        Args:
+            authorization_response (str): the URL of the auth response - it should contain the code value
+        """
+        token = oauth.fetch_token(
             self.token_url,
-            authorization_response=authorization_response
+            authorization_response=authorization_response,
+            client_secret=self._client_secret
             )
+        self._update_token(token)
+        return
 
     @property
     def base_url(self):
