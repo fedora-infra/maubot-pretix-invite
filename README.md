@@ -20,3 +20,22 @@ now continue with the rest of the instructions below
 
 if you get a message saying that it uploaded successfully, your bot has been updated and you can test it in your matrix client
 
+### Creating test users
+
+You may want to add a bunch of additional users to the dev environment for testing, to do so, SSH into the VM per the above instructions and run these commands for each user that you want to add, replacing `NAME` with the name you want:
+```bash
+register_new_matrix_user -u NAME -p password -c /etc/synapse/homeserver.yaml --no-admin
+mbc auth -c --homeserver matrixbots.tinystage.test --username NAME --password password
+
+```
+
+This will set up the account and assign it a dummy client that will automatically join any rooms it is invited to.
+
+You can set the name to whatever you like. Here are some ideas:
+- adam
+- brodie
+- charlie
+- dave
+- evelyn
+- faith
+
