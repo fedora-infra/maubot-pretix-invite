@@ -2,6 +2,9 @@ import requests
 import csv
 from typing import List, Dict
 from functools import reduce
+from oauthlib.oauth2 import BackendApplicationClient
+
+from requests_oauthlib import OAuth2Session
 
 
 def question_id_to_header(question_id:str):
@@ -15,10 +18,12 @@ def question_id_to_header(question_id:str):
 class Pretix:
 
     def __init__(self, instance_url, client_id, client_secret, redirect_uri):
+        
+        self.client = BackendApplicationClient(client_id=client_id)
+
+        self.oauth = OAuth2Session(client=client)
+
         self._instance_url = instance_url
-        self.client_id = client_id
-        self._client_secret = client_secret
-        self.redirect_uri = redirect_uri
 
     @property
     def _has_token(self):
@@ -32,41 +37,34 @@ class Pretix:
     def oauth_url(self):
         return self.get_oauth_url()
 
-    def get_oauth_url(self, write=False):
+    @property
+    def token_url(self):
+        return self.base_url + "/oauth/token"
+
+    def get_auth_url(self, write=False):
+        authorization_url, state = oauth.authorization_url(
+            self.base_url + "/oauth/authorize"
+        )
+        # client_id
+        # response_type
+        # scope
+        # redirect_uri
+        
         # TODO: figure out what is needed to get write access - this isnt needed right now though
         read_write = "read" if not write else ""
 
-        return self.base_url + f"/oauth/authorize?client_id={self.client_id}&response_type=code&scope=read&redirect_uri={self.redirect_uri}"
+        # return self.base_url + f"/oauth/authorize?client_id={self.client_id}&response_type=code&scope=read&redirect_uri={self.redirect_uri}"
+        return authorization_url
+
+    def _set_token_from_auth_callback(self, authorization_response):
+        return oauth.fetch_token(
+            self.token_url,
+            authorization_response=authorization_response
+            )
 
     @property
     def base_url(self):
         return self._instance_url + "/api/v1"
-
-    def _get_fresh_token_from_code(self, code, grant_type):
-        url = self.base_url + "/oauth/token"
-        application/x-www-form-urlencoded
-
-    def _refresh_token(self, code):
-        url = self.base_url + "/oauth/token"
-        application/x-www-form-urlencoded
-        _get_fresh_token_from_code()
-
-    def _fetch_token(self, grant_type, parameters={}):
-        url = self.base_url + "/oauth/token"
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-        data = {
-            "grant_type": grant_type
-        }
-        data.update(parameters)
-
-        response = requests.post(url, headers=headers, data=data)
-        response.raise_for_status()
-        json_response = response.json()
-        
-
-
 
     def listen(self):
         """spin up a web server to listen on a particular IP and port for the redirect code
@@ -76,13 +74,10 @@ class Pretix:
     def fetch_data(self, organizer, event) -> dict:
         url = self.base_url + "/organizers/{organizer}/events/{event}/orders/"
 
-        headers = {
-            "Authorization": f"Bearer {self._token}"
-        }
         data = []
 
         while url:
-            response = requests.get(url, headers=headers)
+            response = self.oauth.get(url)
             response.raise_for_status()
             json_response = response.json()
             data.extend(json_response.get('results', []))
