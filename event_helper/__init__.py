@@ -5,8 +5,10 @@ import jinja2
 from aiohttp.web import Response
 from maubot import MessageEvent, Plugin
 from maubot.handlers import command
+from mautrix.client.api.events import EventMethods
+from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
-
+from matrix_utils import MatrixUtils
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
@@ -23,6 +25,10 @@ class EventManagement(Plugin):
 
     async def start(self):
         self.config.load_and_update()
+        self.room_methods = RoomMethods(api=self.client.api)
+        self.event_methods = EventMethods(api=self.client.api)
+        self.matrix_utils = MatrixUtils(self.client.api, self.log)
+
         self.webapp.add_route("POST", "/notify", self.handle_request)
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
         print(self.webapp_url)
@@ -121,3 +127,15 @@ class EventManagement(Plugin):
         """
 
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
+    @command.new(name="invite", help="invite a person (dev command)")
+    @command.argument("username", pass_raw=True, required=True)
+    async def bothelp(self, evt: MessageEvent, username: str) -> None:
+        # Ensure room exists
+        # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
+        # Ensure users are invited
+        all_users = {}
+        all_users.append({username, {}})
+        await self.invite_user(room_id, all_users)
+
+        # Ensure users have correct power levels
+        # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
