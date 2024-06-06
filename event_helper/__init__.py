@@ -127,9 +127,9 @@ class EventManagement(Plugin):
         """
 
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
-    @command.new(name="invite", help="invite a person (dev command)")
-    @command.argument("username", pass_raw=True, required=True)
-    async def bothelp(self, evt: MessageEvent, username: str) -> None:
+    @command.new(name="batchinvite", help="invite from a pretix URL")
+    @command.argument("pretix_url", pass_raw=True, required=True)
+    async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
         # Ensure room exists
         # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
         room_id = evt.room_id
