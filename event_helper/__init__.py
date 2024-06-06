@@ -134,7 +134,7 @@ class EventManagement(Plugin):
         # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
         # Ensure users are invited
         all_users = {}
-        all_users.append({username, {}})
+        all_users.update({username, {}})
         await self.invite_user(room_id, all_users)
 
         # Ensure users have correct power levels
