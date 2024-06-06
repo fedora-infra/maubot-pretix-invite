@@ -3,7 +3,7 @@ import hmac
 
 import jinja2
 from aiohttp.web import Response
-from maubot import Plugin
+from maubot import MessageEvent, Plugin
 from maubot.handlers import command
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
