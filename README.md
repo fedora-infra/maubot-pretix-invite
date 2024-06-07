@@ -13,13 +13,14 @@ Things the bot needs to run:
 - python dependencies from requirements.txt
 - a public facing web address with HTTPS enabled (not fully supported yet but planned) - this is for webhooks and callbacks from pretix
 - Credentials for pretix
+- a pretix event
 
 
 The bot should run on the same infrastructure as the other matrix bots. I'm not quite sure what this infrastructure is though.... 
 
 ## Configuration
 
-To configure the bot, modify `base-config.yaml` to add your tokens and the matrix IDs of some authorized users.
+To configure the bot, modify `base-config.yaml` to add your pretix tokens and the matrix IDs of some authorized users.
 
 
 ## Basic Usage
@@ -48,7 +49,10 @@ This bot uses [matrix-bots](https://github.com/fedora-infra/matrix-bots) as its 
 If this bot is not already present in the dev environment, you can probably use or adapt https://github.com/MoralCode/matrix-bots/tree/eventbot to get most of the way there.
 
 
-### Getting Pretix Credentials
+### Pretix
+
+#### Getting Credentials
+
 
 The main thing this bot needs to work is credentials for the event ticketing platform Pretix. Either of these options will likely require elevated permissions on the Fedora pretix team, or someone willing to authenticate for you.
 
@@ -60,6 +64,22 @@ There are a couple paths for getting credentials:
 You will need to create a pretix account (can probably be unpriviliged - may need an invite from someone) and [register an Oauth application](https://docs.pretix.eu/en/latest/api/oauth.html#registering-an-application) to get a client ID and secret (the secret may not be fully necessary).
 - for the redirect URL, if you dont know whether you are going to have access to a public facing, https-capable web address, simply enter `https://localhost:8000/`
 
+#### Setting up an event
+
+Once you are in a pretix team you can set up an event. The process is pretty much the same as setting up any event in pretix, however....
+
+If this event is being set up for testing, be sure to uncheck the "list publicly" box on the main settings page so that the event doesnt show up in your orgs public list of events
+
+![The "list publicly" checkbox on the main settings page of pretix that reads "Show in lists"](./demo/pretix%20public%20checkbox.png)
+
+
+You will also need to configure a custom question to collect participant's Matrix ID. Pretix doesnt seem to have user facing documentation on this, so your best bet is probably to copy the settings from an existing event that had these questions already set up.
+
+Here's what you would need to set the values to for the matrix id question (ignore the FAS one - you may need to do additional things to set up questions, im not sure):
+
+![the questions menu in pretix showing a configured matrix ID question](./demo/pretix%20questions%20setup.png)
+
+Currently this bot is hardcoded to look for an `internal identifier` value (its under advanced when editing the question) thats set to `matrix`. In the future this may be configurable
 
 
 ### Hacking workflow
