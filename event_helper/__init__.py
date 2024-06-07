@@ -25,6 +25,61 @@ class Config(BaseProxyConfig):
         helper.copy("allowlist")
 
 
+
+def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
+    """check to ensure a given matrix id is formatted in a valid way
+
+    this refers heavily to the rules given for matrix ids in https://spec.matrix.org/v1.10/appendices/#user-identifiers
+
+    Args:
+        possible_matrix_id (str): the string to check for matrix-id-ness
+        fix_at_sign (bool, Optional): Whether to correct a missing leading @ symbol in the ID. Defaults to False
+    Returns:
+        str: the matrix ID that passed validation (and may be modified depending on the options provided)
+    """
+    if possible_matrix_id is None:
+        raise ValueError("a matrix ID cannot be a nonexistent value (None)")
+    if possible_matrix_id == "":
+        raise ValueError("a matrix ID cannot be an empty string")
+    
+    
+    # https://github.com/element-hq/synapse/issues/11020
+    if " " in possible_matrix_id:
+        raise ValueError("a matrix ID cannot contain spaces")
+
+    if not possible_matrix_id.startswith("@") and fix_at_sign:
+        possible_matrix_id = "@" + possible_matrix_id
+    
+    frequency = Counter(possible_matrix_id)
+
+    if frequency["@"] > 1 :
+        raise ValueError("a matrix ID cannot contain more than one @ symbol")
+    
+    if frequency[":"] > 1 :
+        raise ValueError("a matrix ID cannot contain more than one : symbol")
+    
+    if frequency[":"] < 1 :
+        raise ValueError("a matrix ID must contain one : symbol")
+    
+    allowable_characters = Counter(string.ascii_lowercase + string.digits + "-.=_/+")
+    illegal_chars = set(frequency.elements()).difference(set(allowable_characters.elements()))
+
+    if len(illegal_chars) > 0:
+        raise ValueError(f"the matrix ID contains illegal characters: {"".join(list(illegal_chars))}")
+    
+    domain = possible_matrix_id.split(":")[1]
+
+    if not validators.domain(domain):
+        raise ValueError(f"the domain portion of the matrix ID is not valid")
+
+    # The length of a user ID, including the @ sigil and the domain, MUST NOT exceed 255 characters.
+    if len(possible_matrix_id) > 255:
+        raise ValueError("a matrix ID cannot be longer than 255 characters")
+    
+    return possible_matrix_id
+
+    
+
 class EventManagement(Plugin):
     @classmethod
     def get_config_class(cls):
