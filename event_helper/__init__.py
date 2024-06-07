@@ -138,7 +138,7 @@ class EventManagement(Plugin):
         """
 
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
-    @command.new(name="batchinvite", help="invite from a pretix URL")
+    @command.new(name="batchinvite", help="invite attendees from pretix")
     @command.argument("pretix_url", pass_raw=True, required=True)
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
