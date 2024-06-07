@@ -195,4 +195,4 @@ class EventManagement(Plugin):
             await evt.reply(f"Please visit {auth_url} and re-run the `!authorize` command again with the URL you are redirected to in order to authorize.")
             return
         
-        await evt.reply(f"Authorization test successful")
+        await evt.reply(f"Authorization successful")
