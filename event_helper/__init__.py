@@ -9,6 +9,9 @@ from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
+from collections import Counter
+import string
+import validators
 from urllib.parse import urlparse
 
 from .matrix_utils import MatrixUtils, UserInfo
