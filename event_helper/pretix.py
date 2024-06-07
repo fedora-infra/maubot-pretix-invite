@@ -114,6 +114,7 @@ class Pretix:
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
         token = self.oauth.fetch_token(
             self.token_url,
+            code=querystring.get("code"),
             authorization_response=authorization_response,
             client_secret=self._client_secret
             )
