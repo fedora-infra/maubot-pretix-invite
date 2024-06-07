@@ -68,7 +68,7 @@ def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
     illegal_chars = set(frequency.elements()).difference(set(allowable_characters.elements()))
 
     if len(illegal_chars) > 0:
-        raise ValueError(f"the matrix ID contains illegal characters: {"".join(list(illegal_chars))}")
+        raise ValueError(f"the matrix ID contains illegal characters: {''.join(list(illegal_chars))}")
     
     domain = possible_matrix_id.split(":")[1]
 
