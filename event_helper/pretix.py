@@ -72,7 +72,7 @@ class Pretix:
 
 
     def get_auth_url(self, write=False):
-        authorization_url, state = oauth.authorization_url(
+        authorization_url, state = self.oauth.authorization_url(
             self.base_url + "/oauth/authorize"
         )
         # client_id
@@ -92,7 +92,7 @@ class Pretix:
         Args:
             authorization_response (str): the URL of the auth response - it should contain the code value
         """
-        token = oauth.fetch_token(
+        token = self.oauth.fetch_token(
             self.token_url,
             authorization_response=authorization_response,
             client_secret=self._client_secret
