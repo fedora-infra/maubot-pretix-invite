@@ -153,8 +153,37 @@ class EventManagement(Plugin):
         # Ensure users are invited
         all_users = {}
         # all_users.update({username: UserInfo()})
+        try:
+            self.pretix.test_auth()
+        except Exception as e:
+            await evt.reply(f"Error when testing authentication `{e}`. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
+            return
         all_users[username] = UserInfo()
         await self.matrix_utils.ensure_room_invitees(room_id, all_users)
 
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
+
+
+    @command.new(name="authorize", help="authorize access to your pretix")
+    @command.argument("auth_url", pass_raw=True, required=False)
+    async def batchinvite(self, evt: MessageEvent, auth_url: str) -> None:
+        # permission check
+        # sender = evt.sender
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        if auth_url is not None and auth_url != "":
+            self.pretix.set_token_from_auth_callback(auth_url)
+        
+        try:
+            self.pretix.test_auth()
+        except Exception as e:
+
+            auth_url = self.pretix.get_auth_url()
+            # inform user to visit the url and run the !token command with the response
+            await evt.reply(f"Error when testing authentication `{e}`. This is likely due to a lack of authorization to access the configured pretix instance to query event registrations. Please visit {auth_url} and re-run the `!authorize` command with the URL you are redirected to.")
+            return
+        
+        await evt.reply(f"Authorization test successful")
