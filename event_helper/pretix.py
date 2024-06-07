@@ -108,13 +108,12 @@ class Pretix:
             # something went wrong
         self.oauth = OAuth2Session(
             self._client_id,
-            state=querystring.get("state"),
+            state=querystring.get("state")[0],
             # token=token,
             auto_refresh_url=self.token_url,
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
         token = self.oauth.fetch_token(
             self.token_url,
-            code=querystring.get("code"),
             authorization_response=authorization_response,
             client_secret=self._client_secret
             )
