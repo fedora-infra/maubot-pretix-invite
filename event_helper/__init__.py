@@ -64,7 +64,7 @@ def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
     if frequency[":"] < 1 :
         raise ValueError("a matrix ID must contain one : symbol")
     
-    allowable_characters = Counter(string.ascii_lowercase + string.digits + "-.=_/+")
+    allowable_characters = Counter(string.ascii_lowercase + string.digits + "-.=_/+" + "@:")
     illegal_chars = set(frequency.elements()).difference(set(allowable_characters.elements()))
 
     if len(illegal_chars) > 0:
