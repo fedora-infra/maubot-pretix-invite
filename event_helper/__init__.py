@@ -187,7 +187,7 @@ class EventManagement(Plugin):
 
     @command.new(name="authorize", help="authorize access to your pretix")
     @command.argument("auth_url", pass_raw=True, required=False)
-    async def batchinvite(self, evt: MessageEvent, auth_url: str) -> None:
+    async def authorize(self, evt: MessageEvent, auth_url: str) -> None:
         # permission check
         # sender = evt.sender
         if evt.sender not in self.config["allowlist"]:
