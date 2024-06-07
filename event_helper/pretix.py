@@ -1,13 +1,13 @@
 import requests
 import csv
-from typing import List, Dict
+from typing import List, Dict, NewType
 from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
 
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
 
-type CSVData = list[Dict[str, dict]]
+CSVData = NewType('CSVData', list[Dict[str, dict]])
 
 
 def question_id_to_header(question_id:str):
