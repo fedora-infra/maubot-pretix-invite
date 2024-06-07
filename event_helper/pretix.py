@@ -107,7 +107,7 @@ class Pretix:
         # if not state:
             # something went wrong
         self.oauth = OAuth2Session(
-            client_id,
+            self._client_id,
             state=querystring.get("state"),
             # token=token,
             auto_refresh_url=self.token_url,
