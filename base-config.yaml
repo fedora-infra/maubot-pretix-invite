@@ -1,3 +1,6 @@
 pretix_instance_url: https://pretix.eu/
+pretix_client_id: ID_HERE
+pretix_client_secret: SECRET_HERE
+pretix_redirect_url: http://url.to/this/bot/callback
 allowlist:
   - "@aaronhale:matrixbots.tinystage.test"

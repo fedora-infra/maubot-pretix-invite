@@ -15,6 +15,9 @@ from .matrix_utils import MatrixUtils, UserInfo
 class Config(BaseProxyConfig):
     def do_update(self, helper: ConfigUpdateHelper):
         helper.copy("pretix_instance_url")
+        helper.copy("pretix_client_id")
+        helper.copy("pretix_client_secret")
+        helper.copy("pretix_redirect_url")
         helper.copy("allowlist")
 
 
