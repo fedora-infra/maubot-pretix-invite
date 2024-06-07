@@ -143,10 +143,13 @@ class EventManagement(Plugin):
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
         # sender = evt.sender
+        self.log.debug(f"sender: {evt.sender}")
+
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
         
+        self.log.debug(f"params: {pretix_url}")
         # Ensure room exists
         # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
         room_id = evt.room_id
