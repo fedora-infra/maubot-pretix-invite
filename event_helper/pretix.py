@@ -82,7 +82,7 @@ class Pretix:
         # return self.base_url + f"/oauth/authorize?client_id={self.client_id}&response_type=code&scope=read&redirect_uri={self.redirect_uri}"
         return authorization_url
 
-    def _set_token_from_auth_callback(self, authorization_response:str):
+    def set_token_from_auth_callback(self, authorization_response:str):
         """complete the auth process by using the response from the oauth process to fetch a token
 
         Args:
