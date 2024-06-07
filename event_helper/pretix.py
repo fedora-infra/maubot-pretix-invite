@@ -120,6 +120,17 @@ class Pretix:
         self._update_token(token)
         return
 
+    def revoke_access_token(self):
+        """attempt to revoke the access token if it is suspected to have bene compromized or is no longer needed
+        """
+        url = self.base_url + "/oauth/revoke_token"
+        body = {
+            "token": self._token.access_token
+        }
+
+        r = self.oauth.post(url)
+        r.raise_for_status()
+    
     @property
     def base_url(self):
         return self._instance_url + "/api/v1"
