@@ -32,7 +32,7 @@ class Pretix:
         #     'client_secret': r'potato',
         # }
         self.oauth = OAuth2Session(
-            client=client,
+            client=self.client,
             # token=token,
             auto_refresh_url=self.token_url,
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
