@@ -41,6 +41,10 @@ class Pretix:
         # test the auth
         r = self.oauth.get(self.test_url)
         r.raise_for_status()
+
+    @property
+    def is_authorized(self):
+        return self.oauth.authorized
         
     @property
     def _has_token(self):
