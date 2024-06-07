@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 @dataclass
 class Token:
