@@ -71,13 +71,13 @@ class Pretix:
     def test_url(self):
         return self.base_url + "/me"
 
-    def _update_token(self, token:str):
+    def _update_token(self, token:json):
         """in-memory token storage
 
         Args:
-            token (str): the token to store
+            token (json): the token to store
         """
-        self._token = Token.from_str(token)
+        self._token = Token.from_json(token)
 
 
     def get_auth_url(self, write=False):
