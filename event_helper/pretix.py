@@ -228,7 +228,7 @@ class Pretix:
         Returns:
             CSVData: the filtered version of the initial data with already-processed rows removed
         """
-        
+        # extract just the order ids of the records that have been processed already
         processed_ids = set([ r[filter_key] for r in processed_csv_data])
-
+        # return a list of records from the full data as long as they are not in the list of processed records
         return list(filter(lambda d: d[filter_key] not in processed_ids, csv_data))
