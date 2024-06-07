@@ -241,7 +241,7 @@ class EventManagement(Plugin):
 
         data = self.pretix.fetch_data(organizer, event)
         self.log.debug(f"data: {data}")
-        data = self.extract_answers(data, filter_processed=True)
+        data = self.pretix.extract_answers(data, filter_processed=True)
         self.log.debug(f"extracted data: {data}")
 
         # rows = filter_processed_data(entries, prevrows)
