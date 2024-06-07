@@ -71,7 +71,7 @@ class Pretix:
     def test_url(self):
         return self.base_url + "/me"
 
-    def _update_token(self, token:json):
+    def _update_token(self, token:dict):
         """in-memory token storage
 
         Args:
