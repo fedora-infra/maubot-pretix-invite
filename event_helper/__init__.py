@@ -143,15 +143,18 @@ class EventManagement(Plugin):
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
         # sender = evt.sender
-        if evt.sender in self.config["allowlist"]:
-            # Ensure room exists
-            # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
-            room_id = evt.room_id
-            # Ensure users are invited
-            all_users = {}
-            # all_users.update({username: UserInfo()})
-            all_users[username] = UserInfo()
-            await self.matrix_utils.ensure_room_invitees(room_id, all_users)
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+        
+        # Ensure room exists
+        # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
+        room_id = evt.room_id
+        # Ensure users are invited
+        all_users = {}
+        # all_users.update({username: UserInfo()})
+        all_users[username] = UserInfo()
+        await self.matrix_utils.ensure_room_invitees(room_id, all_users)
 
-            # Ensure users have correct power levels
-            # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
+        # Ensure users have correct power levels
+        # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
