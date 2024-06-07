@@ -3,6 +3,37 @@ A maubot plugin that helps facilitate Fedora virtual events that are run through
 
 The code for this bot was originally based on the [maubot-pagure-notifications](https://github.com/fedora-infra/maubot-pagure-notifications) codebase due its implementation of similar features (i.e. handling webhooks).
 
+## Features
+- Can auth with pretix and fetch event attendees
+- Can bulk-invite attendees who havent yet been processed
+
+
+## Dependencies
+Things the bot needs to run:
+- python dependencies from requirements.txt
+- a public facing web address with HTTPS enabled (not fully supported yet but planned) - this is for webhooks and callbacks from pretix
+- Credentials for pretix
+
+
+The bot should run on the same infrastructure as the other matrix bots. I'm not quite sure what this infrastructure is though.... 
+
+## Configuration
+
+To configure the bot, modify `base-config.yaml` to add your tokens and the matrix IDs of some authorized users.
+
+
+## Basic Usage
+
+Once the bot is running and in a matrix room, you can interact with it using a few commands:
+
+`!authorize` (no arguments) will give you an oauth url to give the bot read only access to a pretix team you are a member of.
+
+`!authorize <callback url>` will complete the auth process in the event you dont have (or havent configured, or this bot doesnt yet support) a web server thats publicly-accessible and HTTPS-capable for receiving the callback URL to complete the authentication process. Simply use this command with the URL that you are redirected to after auth and it will do the rest.
+
+`!batchinvite <pretix url>` this command, in combination with the pretix invitation url you probably distributed to your event participants (i.e. `https://pretix.eu/fedora/matrix-test/`) will allow the bot to query your event and grab participants matrix IDs and attempt to invite them to the room where the command was issued
+
+
+
 
 ## History and project Origins
 
@@ -13,15 +44,10 @@ This project began with the use of pretix + Matrix combo from the F40 release pa
 
 This bot uses [matrix-bots](https://github.com/fedora-infra/matrix-bots) as its dev environment.
 
-### Dependencies
-Things the bot needs to run:
-- python dependencies from requirements.txt
-- a public facing web address with HTTPS enabled (not fully supported yet but planned) - this is for webhooks and callbacks from pretix
-- 
+If this bot is not already present in the dev environment, you can probably use or adapt https://github.com/MoralCode/matrix-bots/tree/eventbot to get most of the way there.
 
-### Configuration
 
-#### Pretix Auth
+### Getting Pretix Credentials
 
 The main thing this bot needs to work is credentials for the event ticketing platform Pretix. Either of these options will likely require elevated permissions on the Fedora pretix team, or someone willing to authenticate for you.
 
@@ -71,4 +97,3 @@ You can set the name to whatever you like. Here are some ideas:
 - dave
 - evelyn
 - faith
-
