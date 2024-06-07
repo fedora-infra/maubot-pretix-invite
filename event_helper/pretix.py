@@ -24,7 +24,6 @@ class Pretix:
 
     def __init__(self, instance_url, client_id, client_secret, redirect_uri):
         self._instance_url = instance_url
-        self._redirect_uri = redirect_uri
         self._client_secret = client_secret
         self._processed_rows = []
         self._client_id = client_id
@@ -36,7 +35,8 @@ class Pretix:
         # }
         self.oauth = OAuth2Session(
             client_id,
-            scope=["read"]
+            scope=["read"],
+            redirect_uri=redirect_uri
         )
             # token=token,
             # auto_refresh_url=self.token_url,
@@ -82,8 +82,7 @@ class Pretix:
 
     def get_auth_url(self, write=False):
         authorization_url, state = self.oauth.authorization_url(
-            self.base_url + "/oauth/authorize",
-            redirect_uri=self._redirect_uri
+            self.base_url + "/oauth/authorize"
         )
         # client_id
         # response_type
