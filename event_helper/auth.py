@@ -10,7 +10,7 @@ class Token:
     access_token: str
     refresh_token: str
     token_type: str
-    expires_at: datetime.datetime
+    expires_at: datetime
 
 
     @classmethod
