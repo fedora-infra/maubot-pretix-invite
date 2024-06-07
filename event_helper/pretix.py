@@ -141,7 +141,7 @@ class Pretix:
         pass
 
     def fetch_data(self, organizer, event) -> dict:
-        url = self.base_url + "/organizers/{organizer}/events/{event}/orders/"
+        url = self.base_url + f"/organizers/{organizer}/events/{event}/orders/"
 
         data = []
 
