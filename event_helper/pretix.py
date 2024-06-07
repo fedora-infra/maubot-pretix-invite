@@ -7,6 +7,8 @@ from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
 
+from urllib.parse import urlparse, parse_qs
+
 CSVData = NewType('CSVData', list[Dict[str, dict]])
 
 
@@ -24,7 +26,7 @@ class Pretix:
         self._instance_url = instance_url
         self._client_secret = client_secret
         self._processed_rows = []
-        self.client = BackendApplicationClient(client_id=client_id)
+        self._client_id = client_id
         # most providers will ask you for extra credentials to be passed along
         # when refreshing tokens, usually for authentication purposes.
         # extra = {
@@ -32,10 +34,10 @@ class Pretix:
         #     'client_secret': r'potato',
         # }
         self.oauth = OAuth2Session(
-            client=self.client,
+            client_id)#,
             # token=token,
-            auto_refresh_url=self.token_url,
-            token_updater=self._update_token)#auto_refresh_kwargs=extra,
+            # auto_refresh_url=self.token_url,
+            # token_updater=self._update_token)#auto_refresh_kwargs=extra,
     
     def test_auth(self):
         # test the auth
@@ -96,6 +98,17 @@ class Pretix:
         Args:
             authorization_response (str): the URL of the auth response - it should contain the code value
         """
+        redirected_url = urlparse(authorization_response)
+        state = parse_qs(redirected_url.query).get("code")
+
+        # if not state:
+            # something went wrong
+        self.oauth = OAuth2Session(
+            client_id,
+            state=state,
+            # token=token,
+            auto_refresh_url=self.token_url,
+            token_updater=self._update_token)#auto_refresh_kwargs=extra,
         token = self.oauth.fetch_token(
             self.token_url,
             authorization_response=authorization_response,
