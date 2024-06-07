@@ -154,7 +154,7 @@ class EventManagement(Plugin):
         all_users = {}
         # all_users.update({username: UserInfo()})
         if not self.pretix.is_authorized:
-            await evt.reply(f"Error when testing authentication `{e}`. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
+            await evt.reply(f"Error when testing authentication. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
             return
         
         # https://pretix.eu/fedora/matrix-test/
@@ -192,7 +192,7 @@ class EventManagement(Plugin):
         if not self.pretix.is_authorized:
             auth_url = self.pretix.get_auth_url()
             # inform user to visit the url and run the !token command with the response
-            await evt.reply(f"Error when testing authentication `{e}`. This is likely due to a lack of authorization to access the configured pretix instance to query event registrations. Please visit {auth_url} and re-run the `!authorize` command with the URL you are redirected to.")
+            await evt.reply(f"Please visit {auth_url} and re-run the `!authorize` command again with the URL you are redirected to in order to authorize.")
             return
         
         await evt.reply(f"Authorization test successful")
