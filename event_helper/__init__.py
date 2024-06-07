@@ -81,7 +81,6 @@ def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
     
     return possible_matrix_id
 
-    
 
 class EventManagement(Plugin):
     @classmethod
@@ -103,7 +102,6 @@ class EventManagement(Plugin):
         self.webapp.add_route("POST", "/notify", self.handle_request)
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
         print(self.webapp_url)
-        self.log.error(self.config["projects"])
 
     async def handle_request(self, request):
         json = await request.json()
@@ -165,6 +163,7 @@ class EventManagement(Plugin):
 
         return Response()
 
+
     @command.new(name="help", help="list commands")
     @command.argument("commandname", pass_raw=True, required=False)
     async def bothelp(self, evt: MessageEvent, commandname: str) -> None:
@@ -189,6 +188,7 @@ class EventManagement(Plugin):
                 )
         await evt.respond(NL.join(output))
 
+
     @command.new(help="return information about this bot")
     async def version(self, evt: MessageEvent) -> None:
         """
@@ -198,28 +198,22 @@ class EventManagement(Plugin):
         """
 
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
+
+
     @command.new(name="batchinvite", help="invite attendees from pretix")
     @command.argument("pretix_url", pass_raw=True, required=True)
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
-        # sender = evt.sender
-        self.log.debug(f"sender: {evt.sender}")
-
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
-        
-        self.log.debug(f"params: {pretix_url}")
-        # Ensure room exists
-        # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
+
         room_id = evt.room_id
 
-        # all_users.update({username: UserInfo()})
         if not self.pretix.is_authorized:
             await evt.reply(f"Error when testing authentication. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
             return
         
-        # https://pretix.eu/fedora/matrix-test/
         try:
             pretix_url = urlparse(pretix_url)
         except:
@@ -238,20 +232,12 @@ class EventManagement(Plugin):
         if organizer == "" or event == "":
             await evt.reply(f"Invalid input - please enter")
 
-
         data = self.pretix.fetch_data(organizer, event)
-        self.log.debug(f"data: {data}")
         data = self.pretix.extract_answers(data, filter_processed=True)
-        self.log.debug(f"extracted data: {data}")
-
-        # rows = filter_processed_data(entries, prevrows)
-        # get usernames 
-
 
         all_users = {}
 
         for order in data:
-        #  in all_users.keys():
             matrix_id = order["Matrix ID"]
             order_id = order["Order code"]
             self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
@@ -274,7 +260,6 @@ class EventManagement(Plugin):
     @command.argument("auth_url", pass_raw=True, required=False)
     async def authorize(self, evt: MessageEvent, auth_url: str) -> None:
         # permission check
-        # sender = evt.sender
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
