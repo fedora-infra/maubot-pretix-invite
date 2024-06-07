@@ -185,7 +185,7 @@ class Pretix:
             reader = csv.DictReader(csvfile)
             return list(reader)
 
-    def cleanup_csv_for_humans(self, csv_data:list[dict], filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> list[dict]:
+    def filter_csv_columns(self, csv_data:list[dict], filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> list[dict]:
         """Takes in a CSV data (dict-formatted) and returns dict-formatted data with unused columns removed
 
         Args:
