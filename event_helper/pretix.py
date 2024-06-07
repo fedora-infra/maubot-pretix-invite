@@ -60,7 +60,7 @@ class Pretix:
 
     @property
     def test_url(self):
-        return self.base_url + "/organizers/(organizer)/events"
+        return self.base_url + "/me"
 
     def _update_token(self, token:str):
         """in-memory token storage
