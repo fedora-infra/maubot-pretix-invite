@@ -8,8 +8,10 @@ from maubot.handlers import command
 from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
-from .matrix_utils import MatrixUtils, UserInfo
 
+from urllib.parse import urlparse
+
+from .matrix_utils import MatrixUtils, UserInfo
 from .pretix import Pretix
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
@@ -161,10 +163,24 @@ class EventManagement(Plugin):
             return
         
         # https://pretix.eu/fedora/matrix-test/
-        organizer = pretix_url.split("/")[-2]
+        try:
+            pretix_url = urlparse(pretix_url)
+        except:
+            await evt.reply(f"The input provided is not a valid URL")
+            return
+        pretix_path = pretix_url.path
+        # remove trailing slash as it will mess with the upcoming logic
+        if pretix_path.endswith("/"):
+            pretix_path = pretix_path[:-1]
+
+        organizer = pretix_path.split("/")[-2]
         self.log.debug(f"organizer: {organizer}")
-        event = pretix_url.split("/")[-1]
+        event = pretix_path.split("/")[-1]
         self.log.debug(f"event: {event}")
+
+        if organizer == "" or event == "":
+            await evt.reply(f"Invalid input - please enter")
+
 
         data = self.pretix.fetch_data(organizer, event)
         self.log.debug(f"data: {data}")
