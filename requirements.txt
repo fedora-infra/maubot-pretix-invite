@@ -3,3 +3,5 @@ maubot
 maubot-fedora-messages
 mautrix
 pytz
+requests_oauthlib
+validators
