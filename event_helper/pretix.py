@@ -152,6 +152,23 @@ class Pretix:
             return self.filter_processed_data(result, self._processed_rows)
 
 
+    def mark_as_processed(self, rows, replace=False):
+        """add some rows to the processed dataset indicating they were successful
+
+        Args:
+            rows (_type_): _description_
+        """
+        # filter the csv format down to just order IDs
+        processed_order_ids = self.filter_csv_columns(rows, filter_keys=["Order code"])
+        # simplify since csv format is now overkill
+        processed_order_ids = [d["Order code"] for d in processed_order_ids]
+
+        if replace:
+            self._processed_rows = processed_order_ids
+        else:
+            self._processed_rows = list(set(self._processed_rows).union(set(processed_order_ids)))
+
+
     def write_to_csv(self, entries: CSVData, file_name: str, display: bool = False) -> None:  # noqa: E501
         fieldnames = entries[0].keys()
         with open(file_name, mode='w+', newline='') as csv_file:
