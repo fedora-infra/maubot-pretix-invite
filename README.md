@@ -33,6 +33,7 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 `!batchinvite <pretix url>` this command, in combination with the pretix invitation url you probably distributed to your event participants (i.e. `https://pretix.eu/fedora/matrix-test/`) will allow the bot to query your event and grab participants matrix IDs and attempt to invite them to the room where the command was issued
 
 
+![A screenshot of a matrix conversation showing the usage of the above commands](./demo/matrix%20auth%20and%20batch%20invite.png)
 
 
 ## History and project Origins
