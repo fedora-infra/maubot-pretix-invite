@@ -35,7 +35,9 @@ class Pretix:
         #     'client_secret': r'potato',
         # }
         self.oauth = OAuth2Session(
-            client_id)#,
+            client_id,
+            scope=["read"]
+        )
             # token=token,
             # auto_refresh_url=self.token_url,
             # token_updater=self._update_token)#auto_refresh_kwargs=extra,
@@ -81,7 +83,6 @@ class Pretix:
     def get_auth_url(self, write=False):
         authorization_url, state = self.oauth.authorization_url(
             self.base_url + "/oauth/authorize",
-            scope="read",
             redirect_uri=self._redirect_uri
         )
         # client_id
