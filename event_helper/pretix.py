@@ -7,6 +7,9 @@ from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
 
+type CSVData = list[Dict[str, dict]]
+
+
 def question_id_to_header(question_id:str):
     if question_id == "fas":
         return "Fedora Account Services (FAS)"
@@ -119,7 +122,7 @@ class Pretix:
             url = json_response.get('next')
         return data
 
-    def extract_answers(self, schema: dict, filter_processed=False) -> List[dict]:
+    def extract_answers(self, schema: dict, filter_processed=False) -> CSVData:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
                 ticket_id = position['order']
@@ -149,7 +152,7 @@ class Pretix:
             return self.filter_processed_data(result, self._processed_rows)
 
 
-    def write_to_csv(self, entries: List[dict], file_name: str, display: bool = False) -> None:  # noqa: E501
+    def write_to_csv(self, entries: CSVData, file_name: str, display: bool = False) -> None:  # noqa: E501
         fieldnames = entries[0].keys()
         with open(file_name, mode='w+', newline='') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
@@ -164,49 +167,49 @@ class Pretix:
             csv_file.seek(0)
             print(csv_file.read())
 
-    def filter_dict(self, old_dict, your_keys):
+    def filter_dict(self, old_dict: dict, your_keys: list[str]) -> dict:
         """filters a dictionary so it only contains the specified keys
         accomplishes this by constructing a new dictionary
         """
         return { your_key: old_dict[your_key] for your_key in your_keys }
 
     
-    def csv_to_data(self, csv_file:str) -> list[dict]:
+    def csv_to_data(self, csv_file:str) -> CSVData:
         """_summary_
 
         Args:
             csv_file (str): the input filename to process
 
         Returns:
-            list[dict]: the csv data in dict format for further processing
+            CSVData: the csv data in dict format for further processing
         """
         
         with open(csv_file) as csvfile:
             reader = csv.DictReader(csvfile)
             return list(reader)
 
-    def filter_csv_columns(self, csv_data:list[dict], filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> list[dict]:
+    def filter_csv_columns(self, csv_data:CSVData, filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> CSVData:
         """Takes in a CSV data (dict-formatted) and returns dict-formatted data with unused columns removed
 
         Args:
-            csv_data (list[dict]): the input csv data to process
+            csv_data (CSVData): the input csv data to process
 
         Returns:
-            list[dict]: the data with unused columns removed
+            CSVData: the data with unused columns removed
         """
         return [filter_dict(d, filter_keys) for d in csv_data]
     
 
-    def filter_processed_data(self, csv_data:list[dict], processed_csv_data:list[dict], filter_key:str="Order code") -> list[dict]:
+    def filter_processed_data(self, csv_data:CSVData, processed_csv_data:CSVData, filter_key:str="Order code") -> CSVData:
         """filters csv data to remove data thats already been processed
 
 
         Args:
-            csv_data (list[dict]): the input csv data to process
-            processed_csv_data (list[dict]): the input csv data containing processed records to filter out
+            csv_data (CSVData): the input csv data to process
+            processed_csv_data (CSVData): the input csv data containing processed records to filter out
         
         Returns:
-            list[dict]: the filtered version of the initial data with already-processed rows removed
+            CSVData: the filtered version of the initial data with already-processed rows removed
         """
         
         processed_ids = set([ r[filter_key] for r in processed_csv_data])
