@@ -158,7 +158,21 @@ class EventManagement(Plugin):
         except Exception as e:
             await evt.reply(f"Error when testing authentication `{e}`. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
             return
+        
+        # https://pretix.eu/fedora/matrix-test/
+        organizer = pretix_url.split("/")[-2]
+        event = pretix_url.split("/")[-1]
+        data = self.pretix.fetch_data(organizer, event)
+        data = self.extract_answers(data, filter_processed=True)
+
+        # rows = filter_processed_data(entries, prevrows)
+
+
         all_users[username] = UserInfo()
+
+        for username in all_users.keys():
+            self.log.debug(f"planning to invite {username}")
+            
         await self.matrix_utils.ensure_room_invitees(room_id, all_users)
 
         # Ensure users have correct power levels
