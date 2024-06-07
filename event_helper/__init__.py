@@ -9,6 +9,8 @@ from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 from .matrix_utils import MatrixUtils, UserInfo
+
+from .pretix import Pretix
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
@@ -31,6 +33,12 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
+        self.pretix = Pretix(
+            self.config["pretix_instance_url"],
+            self.config["pretix_client_id"],
+            self.config["pretix_client_secret"],
+            self.config["pretix_redirect_url"]
+        )
 
         self.webapp.add_route("POST", "/notify", self.handle_request)
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
