@@ -24,6 +24,7 @@ class Pretix:
 
     def __init__(self, instance_url, client_id, client_secret, redirect_uri):
         self._instance_url = instance_url
+        self._redirect_uri = redirect_uri
         self._client_secret = client_secret
         self._processed_rows = []
         self._client_id = client_id
@@ -79,7 +80,9 @@ class Pretix:
 
     def get_auth_url(self, write=False):
         authorization_url, state = self.oauth.authorization_url(
-            self.base_url + "/oauth/authorize"
+            self.base_url + "/oauth/authorize",
+            scope="read",
+            redirect_uri=self._redirect_uri
         )
         # client_id
         # response_type
