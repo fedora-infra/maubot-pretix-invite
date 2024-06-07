@@ -102,13 +102,13 @@ class Pretix:
             authorization_response (str): the URL of the auth response - it should contain the code value
         """
         redirected_url = urlparse(authorization_response)
-        state = parse_qs(redirected_url.query).get("code")
+        querystring = parse_qs(redirected_url.query)
 
         # if not state:
             # something went wrong
         self.oauth = OAuth2Session(
             client_id,
-            state=state,
+            state=querystring.get("state"),
             # token=token,
             auto_refresh_url=self.token_url,
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
