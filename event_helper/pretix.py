@@ -20,6 +20,7 @@ class Pretix:
     def __init__(self, instance_url, client_id, client_secret, redirect_uri):
         self._instance_url = instance_url
         self._client_secret = client_secret
+        self._processed_rows = []
         self.client = BackendApplicationClient(client_id=client_id)
         # most providers will ask you for extra credentials to be passed along
         # when refreshing tokens, usually for authentication purposes.
@@ -118,7 +119,7 @@ class Pretix:
             url = json_response.get('next')
         return data
 
-    def extract_answers(self, schema: dict) -> List[dict]:
+    def extract_answers(self, schema: dict, filter_processed=False) -> List[dict]:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
                 ticket_id = position['order']
@@ -138,7 +139,14 @@ class Pretix:
             return entries
 
         reduced_results = reduce(reducer, schema, {})
-        return list(reduced_results.values())
+
+        
+        result = list(reduced_results.values())
+
+        if not filter_processed:
+            return result
+        else:
+            return self.filter_processed_data(result, self._processed_rows)
 
 
     def write_to_csv(self, entries: List[dict], file_name: str, display: bool = False) -> None:  # noqa: E501
