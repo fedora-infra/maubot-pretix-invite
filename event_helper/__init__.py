@@ -210,8 +210,7 @@ class EventManagement(Plugin):
         # Ensure room exists
         # room_id = await self.matrix_utils.ensure_room_with_alias(alias)
         room_id = evt.room_id
-        # Ensure users are invited
-        all_users = {}
+
         # all_users.update({username: UserInfo()})
         if not self.pretix.is_authorized:
             await evt.reply(f"Error when testing authentication. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
@@ -243,13 +242,25 @@ class EventManagement(Plugin):
         self.log.debug(f"extracted data: {data}")
 
         # rows = filter_processed_data(entries, prevrows)
+        # get usernames 
 
 
-        all_users[username] = UserInfo()
+        all_users = {}
 
-        for username in all_users.keys():
-            self.log.debug(f"planning to invite {username}")
-            
+        for order in data:
+        #  in all_users.keys():
+            matrix_id = order["Matrix ID"]
+            order_id = order["Order code"]
+            self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
+            # validate matrix id
+            try:
+                validated_id = validate_matrix_id(matrix_id)
+            except ValueError as e:
+                self.log.debug(f"matrix ID was invalid for the following reason: {e}")
+            else:
+                self.log.debug(f"matrix ID was valid")
+                all_users[validated_id] = UserInfo()
+
         await self.matrix_utils.ensure_room_invitees(room_id, all_users)
 
         # Ensure users have correct power levels
