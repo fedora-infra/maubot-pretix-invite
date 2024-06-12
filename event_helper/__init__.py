@@ -221,6 +221,12 @@ class EventManagement(Plugin):
         
         self.room_mapping[organizer][event].add(room_id)
 
+    def _room_is_mapped(self, room):
+        for organizer in self.room_mapping:
+            for event in self.room_mapping[organizer]:
+                if room in event:
+                    return True
+        return False
     
     @command.new(name="setroom", help="de-associate the current matrix room with a specified pretix event")
     @command.argument("pretix_url", pass_raw=True, required=True)
@@ -281,3 +287,17 @@ class EventManagement(Plugin):
             return
         
         await evt.reply(f"Authorization successful")
+
+    @command.new(name="status", help="check the status of the various configuration options for this bot")  
+    async def authorize(self, evt: MessageEvent) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+        
+        room_id = evt.room_id
+        pretix_auth_status = "authorized" if self.pretix.is_authorized else "not authorized"
+        room_associated = "room is set" if self._room_is_mapped(room_id) else "room is not set"
+
+        await evt.reply(f"Pretix status: {pretix_auth_status}\nRoom Status: {room_associated}")
+        
