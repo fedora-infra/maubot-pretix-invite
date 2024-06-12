@@ -146,6 +146,30 @@ class EventManagement(Plugin):
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
 
 
+    def invite_attendees(self, room_id:str, attendees:List[AttendeeMatrixInformation]):
+        """attempt to invite attendees
+
+        Args:
+            room_id (str): the ID of the room to invite users to
+            attendees (List[AttendeeMatrixInformation]): the list of attendees to invite
+        """
+        all_users = {}
+        for matrix_attendee in attendees:
+            matrix_id = matrix_attendee.matrix_id
+            order_id = matrix_attendee.order_code
+            self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
+            # validate matrix id
+            try:
+                validated_id = validate_matrix_id(matrix_id)
+            except ValueError as e:
+                self.log.debug(f"matrix ID was invalid for the following reason: {e}")
+            else:
+                self.log.debug(f"matrix ID was valid")
+                all_users[validated_id] = UserInfo()
+
+        return self.matrix_utils.ensure_room_invitees(room_id, all_users)
+
+
     @command.new(name="batchinvite", help="invite attendees from pretix")
     @command.argument("pretix_url", pass_raw=True, required=True)
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
@@ -172,23 +196,7 @@ class EventManagement(Plugin):
         data = self.pretix.fetch_data(organizer, event)
         data = self.pretix.extract_answers(data, filter_processed=True)
 
-        all_users = {}
-
-        for matrix_attendee in data:
-            matrix_id = matrix_attendee.matrix_id
-            order_id = matrix_attendee.order_code
-            self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
-            # validate matrix id
-            try:
-                validated_id = validate_matrix_id(matrix_id)
-            except ValueError as e:
-                self.log.debug(f"matrix ID was invalid for the following reason: {e}")
-            else:
-                self.log.debug(f"matrix ID was valid")
-                all_users[validated_id] = UserInfo()
-
-        await self.matrix_utils.ensure_room_invitees(room_id, all_users)
-
+        await self.invite_attendees(data)
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
