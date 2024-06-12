@@ -274,16 +274,13 @@ class Pretix:
             return self._filter_processed_data(result, self._processed_rows)
 
 
-    def mark_as_processed(self, rows, replace=False):
-        """add some rows to the processed dataset indicating they were successful
+    def mark_as_processed(self, rows: List[AttendeeMatrixInformation], replace=False):
+        """add some attendees to the processed dataset indicating they were successfully invited
 
         Args:
-            rows (_type_): _description_
+            rows (List[AttendeeMatrixInformation]): a List of attendee data to mark as processed
         """
-        # filter the csv format down to just order IDs
-        processed_order_ids = self.filter_csv_columns(rows, filter_keys=["Order code"])
-        # simplify since csv format is now overkill
-        processed_order_ids = [d["Order code"] for d in processed_order_ids]
+        processed_order_ids = [d.order_code for d in rows]
 
         if replace:
             self._processed_rows = processed_order_ids
