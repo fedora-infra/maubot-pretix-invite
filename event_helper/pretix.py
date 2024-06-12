@@ -43,6 +43,26 @@ class Pretix:
             # auto_refresh_url=self.token_url,
             # token_updater=self._update_token)#auto_refresh_kwargs=extra,
     
+    @staticmethod
+    def parse_invite_url(url):
+        try:
+            pretix_url = urlparse(pretix_url)
+        except:
+            raise ValueError(f"The input provided is not a valid URL")
+        
+        pretix_path = pretix_url.path
+        # remove trailing slash as it will mess with the upcoming logic
+        if pretix_path.endswith("/"):
+            pretix_path = pretix_path[:-1]
+
+        organizer = pretix_path.split("/")[-2]
+        event = pretix_path.split("/")[-1]
+       
+        if organizer == "" or event == "":
+            raise ValueError("Invalid input - please enter the pretix invitation URL. It should look like https://pretix.ey/<organizer>/<event>")
+        
+        return (organizer, event)
+
     def test_auth(self):
         # test the auth
         r = self.oauth.get(self.test_url)

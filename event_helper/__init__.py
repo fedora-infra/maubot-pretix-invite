@@ -215,22 +215,13 @@ class EventManagement(Plugin):
             return
         
         try:
-            pretix_url = urlparse(pretix_url)
-        except:
-            await evt.reply(f"The input provided is not a valid URL")
-            return
-        pretix_path = pretix_url.path
-        # remove trailing slash as it will mess with the upcoming logic
-        if pretix_path.endswith("/"):
-            pretix_path = pretix_path[:-1]
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(e)
+            # await evt.reply(f"Invalid input - please enter")
 
-        organizer = pretix_path.split("/")[-2]
         self.log.debug(f"organizer: {organizer}")
-        event = pretix_path.split("/")[-1]
         self.log.debug(f"event: {event}")
-
-        if organizer == "" or event == "":
-            await evt.reply(f"Invalid input - please enter")
 
         data = self.pretix.fetch_data(organizer, event)
         data = self.pretix.extract_answers(data, filter_processed=True)
