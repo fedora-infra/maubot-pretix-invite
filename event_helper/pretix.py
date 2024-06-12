@@ -271,7 +271,7 @@ class Pretix:
         if not filter_processed:
             return result
         else:
-            return self.filter_processed_data(result, self._processed_rows)
+            return self._filter_processed_data(result, self._processed_rows)
 
 
     def mark_as_processed(self, rows, replace=False):
@@ -339,7 +339,7 @@ class Pretix:
         return [filter_dict(d, filter_keys) for d in csv_data]
     
 
-    def filter_processed_data(self, csv_data:CSVData, processed_csv_data:CSVData, filter_key:str="Order code") -> CSVData:
+    def _filter_processed_data(self, csv_data:CSVData, processed_csv_data:CSVData, filter_key:str="Order code") -> CSVData:
         """filters csv data to remove data thats already been processed
 
 
