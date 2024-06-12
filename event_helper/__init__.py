@@ -38,6 +38,7 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
+        self.room_mapping = {}
         self.pretix = Pretix(
             self.config["pretix_instance_url"],
             self.config["pretix_client_id"],
@@ -211,6 +212,53 @@ class EventManagement(Plugin):
         failed_invites = self.invite_attendees(room_id, data)
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
+
+    @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
+    @command.argument("pretix_url", pass_raw=True, required=True)
+    async def setroom(self, evt: MessageEvent, pretix_url: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        try:
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(e)
+        
+        # store the association
+        room_id = evt.room_id
+        if self.room_mapping.get(organizer) is None:
+            self.room_mapping[organizer] = [] 
+        
+        if self.room_mapping[organizer].get(event) is None:
+            self.room_mapping[organizer][event] = set()
+        
+        self.room_mapping[organizer][event].add(room_id)
+
+    
+    @command.new(name="setroom", help="de-associate the current matrix room with a specified pretix event")
+    @command.argument("pretix_url", pass_raw=True, required=True)
+    async def unsetroom(self, evt: MessageEvent, pretix_url: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        try:
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(e)
+        
+        # remove the association
+        room_id = evt.room_id
+        if self.room_mapping.get(organizer) is None:
+            return
+        
+        if self.room_mapping[organizer].get(event) is None:
+            return
+        
+        self.room_mapping[organizer][event].remove(room_id)
 
 
     @command.new(name="authorize", help="authorize access to your pretix")
