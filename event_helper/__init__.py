@@ -52,62 +52,45 @@ class EventManagement(Plugin):
 
     async def handle_request(self, request):
         json = await request.json()
-        message_topic = json.get("topic")
+        
+        # this checks whether the webhook type is correct
+        success, result = self.pretix.handle_incoming_webhook(json)
 
-        # first check if the topic of the message is one of the ones that the plugin handles
-        # if message_topic not in ACCEPTED_TOPICS:
-        #     return Response()
+        if not success:
+            self.log.info(result.get("error"))
+            self.log.debug(result.get("debug"))
 
-        # try:
-        #     if message_topic == "git.receive":
-        #         project_name = json["msg"]["project_fullname"]
-        #     elif message_topic == "pull-request.new":
-        #         project_name = json["msg"]["pullrequest"]["project"]["fullname"]
-        #     else:
-        #         project_name = json["msg"]["project"]["fullname"]
-        # except KeyError as e:
-        #     self.log.error(f"The response from pagure was not as expected: {e}.")
-        #     return Response()
 
-        # if project_name not in self.config["projects"]:
-        #     self.log.error(
-        #         f"project {project_name} is sending me a webhook, "
-        #         f"but it is not defined in my config!"
-        #     )
-        #     return Response()
+        organizer = result.extra.get("organizer")
+        event = result.extra.get("event")
+        matrix_id = result.matrix_id
 
-        # try:
-        #     key = self.config["projects"][project_name]["key"]
-        #     topics = self.config["projects"][project_name]["topics"]
-        #     rooms = self.config["projects"][project_name]["topics"][message_topic]
-        # except KeyError as e:
-        #     self.log.error(f"Project configuation for the plugin is invalid: {e}.")
-        #     return Response()
+        try:
+            room_ids = list(self.room_mapping[organizer][event])
+        except (KeyError, TypeError) as e:
+            # if project_name not in self.config["projects"]:
+            self.log.error(
+                f"event {event} from organizer {organizer} is sending me a webhook, "
+                f"but I cant find a room to invite them to because no room has been specified!"
+            )
+            return Response()
 
-        # content = await request.read()
-        # hashhex = hmac.new(key.encode(), msg=content, digestmod=hashlib.sha1).hexdigest()
+        for room_id in room_ids:
+        #   if room[0] == "#":
+        #       roomaliasinfo = await self.client.resolve_room_alias(room)
+        #       room = roomaliasinfo.room_id
+            self.log.debug(f"sending invite from webhook to {room_id}")
+            failed_invites = self.invite_attendees(room_id, data)
 
-        # if not hmac.compare_digest(hashhex, request.headers.get("X-Pagure-Signature")):
-        #     self.log.error(
-        #         f"message from project {project_name} did not validate correctly. ignoring"
-        #     )
-        #     return Response()
+            # this assumes we are only really processing one new attendee at a time
+            if len(failed_invites) == 0:
+                self.oretix.mark_as_processed(result)
+            else:
+                self.log.error(f"unable to invite member {matrix_id}")
 
-        # if message_topic not in topics:
-        #     return Response()
-
-        # template = self.loader.sync_read_file(f"pagure_notifications/{message_topic}.j2")
-        # message = jinja2.Template(template.decode()).render({"json": json})
-
-        # for room in rooms:
-        #     if room[0] == "#":
-        #         roomaliasinfo = await self.client.resolve_room_alias(room)
-        #         room = roomaliasinfo.room_id
-        #     try:
-        #         await self.client.send_text(room, None, html=message)
-        #     except Exception as e:
-        #         self.log.error(f"Problem sending message to room {room}: {e}")
-
+        # Pretix:  If you successfully received a webhook call, your endpoint
+        # should return a HTTP status code between 200 and 299.
+        # If any other status code is returned, we will assume you did not receive the call.
         return Response()
 
 
