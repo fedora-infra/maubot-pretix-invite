@@ -174,7 +174,11 @@ class EventManagement(Plugin):
                 self.log.debug(f"matrix ID was valid")
                 valid_users[validated_id] = UserInfo()
 
-        self.matrix_utils.ensure_room_invitees(room_id, valid_users)
+        if len(valid_users) > 0:
+            self.matrix_utils.ensure_room_invitees(room_id, valid_users)
+        else:
+            self.log.debug(f"no users with valid Matrix IDs to invite")
+
         return invalid_users
 
 
