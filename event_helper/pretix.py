@@ -28,6 +28,25 @@ class AttendeeMatrixInformation:
     matrix_id: str
     extra: dict = field(default={})
 
+    @classmethod
+    def from_pretix_json(cls, json:dict, include_all_data=True) -> AttendeeMatrixInformation:
+        """Create an instance of AttendeeMatrixInformation from pretix JSON data
+
+        Args:
+            json (dict): a dict of the json data from pretix
+
+        Returns:
+            AttendeeMatrixInformation: an object wrapping the most important parts of the attendee data
+        """
+        # explicitly make a copy so mutations dont leak outside this function
+        json = dict(json)
+        order_code = json['Order code']
+        matrix_id = json[question_id_to_header("matrix")]
+        del json['Order code']
+        del json[question_id_to_header("matrix")]
+
+        return cls(order_code, matrix_id, json if include_all_data else {})
+
 class Pretix:
 
     def __init__(self, instance_url, client_id, client_secret, redirect_uri):
