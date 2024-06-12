@@ -100,6 +100,48 @@ class Pretix:
         """
         self._token = Token.from_json(token)
 
+    def handle_incoming_webhook(self, json:dict) -> (bool, dict):
+        """ handle the minimal data returned by a pretix webhook and fetch additional data
+        see: https://docs.pretix.eu/en/latest/api/webhooks.html#receiving-webhooks
+
+        Args:
+            json (dict): the decoded JSON data from the webhook
+
+        Returns:
+            a tuple of (bool, dict) indicating whether the handling was successful.
+                the dict provides either an error message  (containing keys "error" for
+                user-facing or general error message, and "debug" for a more detailed
+                explaination of the issue) or the fetched and filtered pretix order data
+        """
+        # standard entries
+        notification_id = json.get("notification_id")
+        organizer = json.get("organizer")
+        event = json.get("event")
+        code = json.get("code")
+        action = json.get("action")
+
+        # verify some things:
+        # is this for a valid action
+        if action != "pretix.event.order.paid":
+            return (False, {"error": f"could not process webhook for notification {notification_id}", "debug": "action did not match the expected value"})
+            
+        # is this for the expected event and organizer
+        # this info is not stored and cant be checked easily as currently implemented
+
+        # have we processed this order already?
+        if code in self._processed_rows:
+            return (False, {"error": f"could not process webhook for notification {notification_id}", "debug": f"order {code} has already been processed"})
+
+        # if not, fetch the full data and return it
+       
+        data = self.fetch_data(organizer, event, order_code=code)
+        data = self.pretix.extract_answers(data)
+        # embed organizer and event data so the matrix bot can look up what to do
+        data["organizer"] = organizer
+        data["event"] = event
+
+        return (True, data)
+
 
     def get_auth_url(self, write=False):
         authorization_url, state = self.oauth.authorization_url(
