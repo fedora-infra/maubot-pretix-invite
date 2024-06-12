@@ -208,7 +208,7 @@ class EventManagement(Plugin):
         data = self.pretix.fetch_data(organizer, event)
         data = self.pretix.extract_answers(data, filter_processed=True)
 
-        await self.invite_attendees(data)
+        failed_invites = self.invite_attendees(room_id, data)
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
