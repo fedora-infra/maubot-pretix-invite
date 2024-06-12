@@ -174,9 +174,9 @@ class EventManagement(Plugin):
 
         all_users = {}
 
-        for order in data:
-            matrix_id = order["Matrix ID"]
-            order_id = order["Order code"]
+        for matrix_attendee in data:
+            matrix_id = matrix_attendee.matrix_id
+            order_id = matrix_attendee.order_code
             self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
             # validate matrix id
             try:
