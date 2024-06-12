@@ -221,6 +221,15 @@ class EventManagement(Plugin):
         
         self.room_mapping[organizer][event].add(room_id)
 
+    def _has_room_mapping(self, organizer, event):
+        if self.room_mapping.get(organizer) is None:
+            return False
+        
+        if self.room_mapping[organizer].get(event) is None:
+            return False
+        
+        return True
+
     def _room_is_mapped(self, room):
         for organizer in self.room_mapping:
             for event in self.room_mapping[organizer]:
@@ -243,10 +252,7 @@ class EventManagement(Plugin):
         
         # remove the association
         room_id = evt.room_id
-        if self.room_mapping.get(organizer) is None:
-            return
-        
-        if self.room_mapping[organizer].get(event) is None:
+        if not self._has_room_mapping(organizer, event):
             return
         
         self.room_mapping[organizer][event].remove(room_id)
