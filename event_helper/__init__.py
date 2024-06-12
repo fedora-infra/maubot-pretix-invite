@@ -152,8 +152,13 @@ class EventManagement(Plugin):
         Args:
             room_id (str): the ID of the room to invite users to
             attendees (List[AttendeeMatrixInformation]): the list of attendees to invite
+
+        Returns:
+            List[AttendeeMatrixInformation]: the list of users with invalid matrix IDs.
+            If fully successful this will be an empty list
         """
-        all_users = {}
+        valid_users = {} #users in Dict[str,UserInfo] format for the matrix APIs
+        invalid_users = [] # list of AttendeeMatrixInformation
         for matrix_attendee in attendees:
             matrix_id = matrix_attendee.matrix_id
             order_id = matrix_attendee.order_code
@@ -163,11 +168,14 @@ class EventManagement(Plugin):
                 validated_id = validate_matrix_id(matrix_id)
             except ValueError as e:
                 self.log.debug(f"matrix ID was invalid for the following reason: {e}")
+                invalid_users.append(matrix_attendee)
+                continue
             else:
                 self.log.debug(f"matrix ID was valid")
-                all_users[validated_id] = UserInfo()
+                valid_users[validated_id] = UserInfo()
 
-        return self.matrix_utils.ensure_room_invitees(room_id, all_users)
+        self.matrix_utils.ensure_room_invitees(room_id, valid_users)
+        return invalid_users
 
 
     @command.new(name="batchinvite", help="invite attendees from pretix")
