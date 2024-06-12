@@ -339,18 +339,16 @@ class Pretix:
         return [filter_dict(d, filter_keys) for d in csv_data]
     
 
-    def _filter_processed_data(self, csv_data:CSVData, processed_csv_data:CSVData, filter_key:str="Order code") -> CSVData:
-        """filters csv data to remove data thats already been processed
+    def _filter_processed_data(self, data:List[AttendeeMatrixInformation], processed_ids:List[str]) -> List[AttendeeMatrixInformation]:
+        """filters attendee information to remove data thats already been processed
 
 
         Args:
-            csv_data (CSVData): the input csv data to process
-            processed_csv_data (CSVData): the input csv data containing processed records to filter out
+            data (List[AttendeeMatrixInformation]): the input attendee data to process
+            processed_ids (List[str]): the list of identifers of processed records to filter out
         
         Returns:
-            CSVData: the filtered version of the initial data with already-processed rows removed
+            List[AttendeeMatrixInformation]: the filtered version of the initial data with already-processed entries removed
         """
-        # extract just the order ids of the records that have been processed already
-        processed_ids = set([ r[filter_key] for r in processed_csv_data])
         # return a list of records from the full data as long as they are not in the list of processed records
-        return list(filter(lambda d: d[filter_key] not in processed_ids, csv_data))
+        return list(filter(lambda d: d.order_code not in processed_ids, data))
