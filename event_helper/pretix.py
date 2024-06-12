@@ -8,6 +8,7 @@ from requests_oauthlib import OAuth2Session
 from .auth import Token 
 
 from urllib.parse import urlparse, parse_qs
+from dataclasses import dataclass, field
 
 CSVData = NewType('CSVData', list[Dict[str, dict]])
 
@@ -20,6 +21,12 @@ def question_id_to_header(question_id:str):
         return "Matrix ID"
     
     return ""
+
+@dataclass
+class AttendeeMatrixInformation:
+    order_code: str
+    matrix_id: str
+    extra: dict = field(default={})
 
 class Pretix:
 
