@@ -55,16 +55,16 @@ class EventManagement(Plugin):
         json = await request.json()
         
         # this checks whether the webhook type is correct
-        success, result = self.pretix.handle_incoming_webhook(json)
+        success, result_dict = self.pretix.handle_incoming_webhook(json)
 
         if not success:
             self.log.info(result.get("error"))
             self.log.debug(result.get("debug"))
 
-
-        organizer = result.extra.get("organizer")
-        event = result.extra.get("event")
-        matrix_id = result.matrix_id
+        # this assumes we are only really processing one new attendee at a time
+        organizer = result_dict.get("data")[0].extra.get("organizer")
+        event = result_dict.get("data")[0].extra.get("event")
+        matrix_id = result_dict.get("data")[0].matrix_id
 
         try:
             room_ids = list(self.room_mapping[organizer][event])

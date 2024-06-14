@@ -163,8 +163,10 @@ class Pretix:
         data = self.fetch_data(organizer, event, order_code=code)
         data = self.extract_answers(data)
         # embed organizer and event data so the matrix bot can look up what to do
-        data["organizer"] = organizer
-        data["event"] = event
+        result = {}
+        result["organizer"] = organizer
+        result["event"] = event
+        result["data"] = data
 
         return (True, data)
 
