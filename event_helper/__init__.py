@@ -304,7 +304,11 @@ class EventManagement(Plugin):
         
         room_id = evt.room_id
         pretix_auth_status = "authorized" if self.pretix.is_authorized else "not authorized"
-        room_associated = "room is set" if self._room_is_mapped(room_id) else "room is not set"
+        room_associated = "is" if self._room_is_mapped(room_id) else "is not"
 
-        await evt.reply(f"Pretix status: {pretix_auth_status}\nRoom Status: {room_associated}")
+        await evt.reply(f"""
+Pretix status: {pretix_auth_status}
+Room Status: the current room {room_associated} assigned to an event
+Room Status: the current room {'is' if self._has_room_mapping(room_id) else 'is not'} assigned to an event
+""")
         
