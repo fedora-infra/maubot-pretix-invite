@@ -40,7 +40,7 @@ class AttendeeMatrixInformation:
             AttendeeMatrixInformation: an object wrapping the most important parts of the attendee data
         """
         # explicitly make a copy so mutations dont leak outside this function
-        json_data = dict(json_data)
+        json_data = json_data.copy()
         order_code = json_data['Order code']
         matrix_id = json_data[question_id_to_header("matrix")]
         del json_data['Order code']
