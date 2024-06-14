@@ -295,7 +295,7 @@ class EventManagement(Plugin):
         await evt.reply(f"Authorization successful")
 
     @command.new(name="status", help="check the status of the various configuration options for this bot")  
-    async def authorize(self, evt: MessageEvent) -> None:
+    async def status(self, evt: MessageEvent) -> None:
         # permission check
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
