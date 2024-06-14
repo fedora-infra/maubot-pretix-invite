@@ -254,7 +254,7 @@ class EventManagement(Plugin):
 
         room_id = evt.room_id
 
-        if pretix_url is not None:
+        if pretix_url is not None and pretix_url != "":
             try:
                 organizer, event = Pretix.parse_invite_url(pretix_url)
             except ValueError as e:
