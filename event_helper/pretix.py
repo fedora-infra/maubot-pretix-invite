@@ -219,7 +219,6 @@ class Pretix:
         """
         self.oauth = OAuth2Session(
             self._client_id,
-            state=querystring.get("state")[0],
             token=token,
             auto_refresh_url=self.token_url,
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
