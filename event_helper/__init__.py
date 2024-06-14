@@ -241,7 +241,9 @@ class EventManagement(Plugin):
     def _events_for_room(self, room):
         events = []
         for organizer in self.room_mapping:
+            self.log.debug(organizer)
             for event in self.room_mapping[organizer]:
+                self.log.debug(event)
                 if room in event:
                     events.append(f"{organizer}/{event}")
         return events
