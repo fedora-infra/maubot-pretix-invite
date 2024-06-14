@@ -224,10 +224,10 @@ class EventManagement(Plugin):
 
     def _get_rooms(self, organizer, event):
         if self.room_mapping.get(organizer) is None:
-            return False
+            return set()
         
         if self.room_mapping[organizer].get(event) is None:
-            return False
+            return set()
         
         return self.room_mapping[organizer].get(event)
 
@@ -253,7 +253,8 @@ class EventManagement(Plugin):
         
         # remove the association
         room_id = evt.room_id
-        if not self._get_rooms(organizer, event):
+        if self._get_rooms(organizer, event) == set():
+            await evt.reply("room was not part of an event")
             return
         
         self.room_mapping[organizer][event].remove(room_id)
