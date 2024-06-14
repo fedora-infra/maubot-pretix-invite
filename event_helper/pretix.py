@@ -71,7 +71,7 @@ class Pretix:
             # token_updater=self._update_token)#auto_refresh_kwargs=extra,
     
     @staticmethod
-    def parse_invite_url(url):
+    def parse_invite_url(pretix_url):
         try:
             pretix_url = urlparse(pretix_url)
         except:
