@@ -245,7 +245,7 @@ class Pretix:
             url = json_response.get('next')
         return data
 
-    def extract_answers(self, schema: dict, filter_processed=False) -> CSVData:
+    def extract_answers(self, schema: dict, filter_processed=False) -> List[AttendeeMatrixInformation]:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
                 ticket_id = position['order']
