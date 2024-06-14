@@ -214,7 +214,7 @@ class EventManagement(Plugin):
         # store the association
         room_id = evt.room_id
         if self.room_mapping.get(organizer) is None:
-            self.room_mapping[organizer] = [] 
+            self.room_mapping[organizer] = {} 
         
         if self.room_mapping[organizer].get(event) is None:
             self.room_mapping[organizer][event] = set()
