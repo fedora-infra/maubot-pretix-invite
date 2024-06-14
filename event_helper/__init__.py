@@ -309,6 +309,5 @@ class EventManagement(Plugin):
         await evt.reply(f"""
 Pretix status: {pretix_auth_status}
 Room Status: the current room {room_associated} assigned to an event
-Room Status: the current room {'is' if self._has_room_mapping(room_id) else 'is not'} assigned to an event
 """)
         
