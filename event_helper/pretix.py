@@ -27,7 +27,7 @@ def question_id_to_header(question_id:str):
 class AttendeeMatrixInformation:
     order_code: str
     matrix_id: str
-    extra: dict = field(default_factory={})
+    extra: dict = field(default_factory=lambda: {}, hash=False, compare=False)
 
     @classmethod
     def from_pretix_json(cls, json_data:dict, include_all_data=True):
