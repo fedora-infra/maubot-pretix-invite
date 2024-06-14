@@ -230,7 +230,7 @@ class Pretix:
         pass
 
     def fetch_data(self, organizer, event, order_code=None) -> dict:
-        order_code = f"{order_code}/" if order_code is not none else ""
+        order_code = f"{order_code}/" if order_code is not None else ""
         url = self.base_url + f"/organizers/{organizer}/events/{event}/orders/" + order_code
 
         data = []
