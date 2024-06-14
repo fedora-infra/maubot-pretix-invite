@@ -1,5 +1,6 @@
 import requests
 import csv
+import json
 from typing import List, Dict, NewType
 from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
@@ -211,12 +212,15 @@ class Pretix:
         self._update_token(token)
         return
 
-    def set_token_manually(self, token: dict):
+    def set_token_manually(self, token):
         """complete the auth process by using a manually fetched token
 
         Args:
-            token (dict): the token to use
+            token (dict or string): the token to use
         """
+        if isinstance(token, str):
+            token = json.loads(token)
+
         self.oauth = OAuth2Session(
             self._client_id,
             token=token,
