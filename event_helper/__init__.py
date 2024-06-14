@@ -13,9 +13,10 @@ from collections import Counter
 import string
 import validators
 from urllib.parse import urlparse
+from typing import List
 
-from .matrix_utils import MatrixUtils, UserInfo
-from .pretix import Pretix
+from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
+from .pretix import Pretix, AttendeeMatrixInformation
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 
@@ -28,60 +29,6 @@ class Config(BaseProxyConfig):
         helper.copy("allowlist")
 
 
-
-def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
-    """check to ensure a given matrix id is formatted in a valid way
-
-    this refers heavily to the rules given for matrix ids in https://spec.matrix.org/v1.10/appendices/#user-identifiers
-
-    Args:
-        possible_matrix_id (str): the string to check for matrix-id-ness
-        fix_at_sign (bool, Optional): Whether to correct a missing leading @ symbol in the ID. Defaults to False
-    Returns:
-        str: the matrix ID that passed validation (and may be modified depending on the options provided)
-    """
-    if possible_matrix_id is None:
-        raise ValueError("a matrix ID cannot be a nonexistent value (None)")
-    if possible_matrix_id == "":
-        raise ValueError("a matrix ID cannot be an empty string")
-    
-    
-    # https://github.com/element-hq/synapse/issues/11020
-    if " " in possible_matrix_id:
-        raise ValueError("a matrix ID cannot contain spaces")
-
-    if not possible_matrix_id.startswith("@") and fix_at_sign:
-        possible_matrix_id = "@" + possible_matrix_id
-    
-    frequency = Counter(possible_matrix_id)
-
-    if frequency["@"] > 1 :
-        raise ValueError("a matrix ID cannot contain more than one @ symbol")
-    
-    if frequency[":"] > 1 :
-        raise ValueError("a matrix ID cannot contain more than one : symbol")
-    
-    if frequency[":"] < 1 :
-        raise ValueError("a matrix ID must contain one : symbol")
-    
-    allowable_characters = Counter(string.ascii_lowercase + string.digits + "-.=_/+" + "@:")
-    illegal_chars = set(frequency.elements()).difference(set(allowable_characters.elements()))
-
-    if len(illegal_chars) > 0:
-        raise ValueError(f"the matrix ID contains illegal characters: {''.join(list(illegal_chars))}")
-    
-    domain = possible_matrix_id.split(":")[1]
-
-    if not validators.domain(domain):
-        raise ValueError(f"the domain portion of the matrix ID is not valid")
-
-    # The length of a user ID, including the @ sigil and the domain, MUST NOT exceed 255 characters.
-    if len(possible_matrix_id) > 255:
-        raise ValueError("a matrix ID cannot be longer than 255 characters")
-    
-    return possible_matrix_id
-
-
 class EventManagement(Plugin):
     @classmethod
     def get_config_class(cls):
@@ -92,6 +39,7 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
+        self.room_mapping = {}
         self.pretix = Pretix(
             self.config["pretix_instance_url"],
             self.config["pretix_client_id"],
@@ -105,62 +53,46 @@ class EventManagement(Plugin):
 
     async def handle_request(self, request):
         json = await request.json()
-        message_topic = json.get("topic")
+        
+        # this checks whether the webhook type is correct
+        success, result_dict = self.pretix.handle_incoming_webhook(json)
 
-        # first check if the topic of the message is one of the ones that the plugin handles
-        # if message_topic not in ACCEPTED_TOPICS:
-        #     return Response()
+        if not success:
+            self.log.info(result_dict.get("error"))
+            self.log.debug(result_dict.get("debug"))
 
-        # try:
-        #     if message_topic == "git.receive":
-        #         project_name = json["msg"]["project_fullname"]
-        #     elif message_topic == "pull-request.new":
-        #         project_name = json["msg"]["pullrequest"]["project"]["fullname"]
-        #     else:
-        #         project_name = json["msg"]["project"]["fullname"]
-        # except KeyError as e:
-        #     self.log.error(f"The response from pagure was not as expected: {e}.")
-        #     return Response()
+        # this assumes we are only really processing one new attendee at a time
+        organizer = result_dict.get("organizer")
+        event = result_dict.get("event")
+        self.log.debug(result_dict.get("data"))
+        matrix_id = result_dict.get("data")[0].matrix_id
 
-        # if project_name not in self.config["projects"]:
-        #     self.log.error(
-        #         f"project {project_name} is sending me a webhook, "
-        #         f"but it is not defined in my config!"
-        #     )
-        #     return Response()
+        try:
+            room_ids = list(self.room_mapping[organizer][event])
+        except (KeyError, TypeError) as e:
+            # if project_name not in self.config["projects"]:
+            self.log.error(
+                f"event {event} from organizer {organizer} is sending me a webhook, "
+                f"but I cant find a room to invite them to because no room has been specified!"
+            )
+            return Response()
 
-        # try:
-        #     key = self.config["projects"][project_name]["key"]
-        #     topics = self.config["projects"][project_name]["topics"]
-        #     rooms = self.config["projects"][project_name]["topics"][message_topic]
-        # except KeyError as e:
-        #     self.log.error(f"Project configuation for the plugin is invalid: {e}.")
-        #     return Response()
+        for room_id in room_ids:
+        #   if room[0] == "#":
+        #       roomaliasinfo = await self.client.resolve_room_alias(room)
+        #       room = roomaliasinfo.room_id
+            self.log.debug(f"sending invite from webhook to {room_id}")
+            failed_invites = self.invite_attendees(room_id, data)
 
-        # content = await request.read()
-        # hashhex = hmac.new(key.encode(), msg=content, digestmod=hashlib.sha1).hexdigest()
+            # this assumes we are only really processing one new attendee at a time
+            if len(failed_invites) == 0:
+                self.oretix.mark_as_processed(result)
+            else:
+                self.log.error(f"unable to invite member {matrix_id}")
 
-        # if not hmac.compare_digest(hashhex, request.headers.get("X-Pagure-Signature")):
-        #     self.log.error(
-        #         f"message from project {project_name} did not validate correctly. ignoring"
-        #     )
-        #     return Response()
-
-        # if message_topic not in topics:
-        #     return Response()
-
-        # template = self.loader.sync_read_file(f"pagure_notifications/{message_topic}.j2")
-        # message = jinja2.Template(template.decode()).render({"json": json})
-
-        # for room in rooms:
-        #     if room[0] == "#":
-        #         roomaliasinfo = await self.client.resolve_room_alias(room)
-        #         room = roomaliasinfo.room_id
-        #     try:
-        #         await self.client.send_text(room, None, html=message)
-        #     except Exception as e:
-        #         self.log.error(f"Problem sending message to room {room}: {e}")
-
+        # Pretix:  If you successfully received a webhook call, your endpoint
+        # should return a HTTP status code between 200 and 299.
+        # If any other status code is returned, we will assume you did not receive the call.
         return Response()
 
 
@@ -200,6 +132,42 @@ class EventManagement(Plugin):
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
 
 
+    def invite_attendees(self, room_id:str, attendees:List[AttendeeMatrixInformation]):
+        """attempt to invite attendees
+
+        Args:
+            room_id (str): the ID of the room to invite users to
+            attendees (List[AttendeeMatrixInformation]): the list of attendees to invite
+
+        Returns:
+            List[AttendeeMatrixInformation]: the list of users with invalid matrix IDs.
+            If fully successful this will be an empty list
+        """
+        valid_users = {} #users in Dict[str,UserInfo] format for the matrix APIs
+        invalid_users = [] # list of AttendeeMatrixInformation
+        for matrix_attendee in attendees:
+            matrix_id = matrix_attendee.matrix_id
+            order_id = matrix_attendee.order_code
+            self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
+            # validate matrix id
+            try:
+                validated_id = validate_matrix_id(matrix_id)
+            except ValueError as e:
+                self.log.debug(f"matrix ID was invalid for the following reason: {e}")
+                invalid_users.append(matrix_attendee)
+                continue
+            else:
+                self.log.debug(f"matrix ID was valid")
+                valid_users[validated_id] = UserInfo()
+
+        if len(valid_users) > 0:
+            self.matrix_utils.ensure_room_invitees(room_id, valid_users)
+        else:
+            self.log.debug(f"no users with valid Matrix IDs to invite")
+
+        return invalid_users
+
+
     @command.new(name="batchinvite", help="invite attendees from pretix")
     @command.argument("pretix_url", pass_raw=True, required=True)
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
@@ -215,45 +183,84 @@ class EventManagement(Plugin):
             return
         
         try:
-            pretix_url = urlparse(pretix_url)
-        except:
-            await evt.reply(f"The input provided is not a valid URL")
-            return
-        pretix_path = pretix_url.path
-        # remove trailing slash as it will mess with the upcoming logic
-        if pretix_path.endswith("/"):
-            pretix_path = pretix_path[:-1]
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(e)
+            # await evt.reply(f"Invalid input - please enter")
 
-        organizer = pretix_path.split("/")[-2]
         self.log.debug(f"organizer: {organizer}")
-        event = pretix_path.split("/")[-1]
         self.log.debug(f"event: {event}")
-
-        if organizer == "" or event == "":
-            await evt.reply(f"Invalid input - please enter")
 
         data = self.pretix.fetch_data(organizer, event)
         data = self.pretix.extract_answers(data, filter_processed=True)
 
-        all_users = {}
-
-        for order in data:
-            matrix_id = order["Matrix ID"]
-            order_id = order["Order code"]
-            self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
-            # validate matrix id
-            try:
-                validated_id = validate_matrix_id(matrix_id)
-            except ValueError as e:
-                self.log.debug(f"matrix ID was invalid for the following reason: {e}")
-            else:
-                self.log.debug(f"matrix ID was valid")
-                all_users[validated_id] = UserInfo()
-
-        await self.matrix_utils.ensure_room_invitees(room_id, all_users)
-
+        failed_invites = self.invite_attendees(room_id, data)
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
+
+    @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
+    @command.argument("pretix_url", pass_raw=True, required=True)
+    async def setroom(self, evt: MessageEvent, pretix_url: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        try:
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(e)
+        
+        # store the association
+        room_id = evt.room_id
+        if self.room_mapping.get(organizer) is None:
+            self.room_mapping[organizer] = [] 
+        
+        if self.room_mapping[organizer].get(event) is None:
+            self.room_mapping[organizer][event] = set()
+        
+        self.room_mapping[organizer][event].add(room_id)
+
+    
+    @command.new(name="setroom", help="de-associate the current matrix room with a specified pretix event")
+    @command.argument("pretix_url", pass_raw=True, required=True)
+    async def unsetroom(self, evt: MessageEvent, pretix_url: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        try:
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(e)
+        
+        # remove the association
+        room_id = evt.room_id
+        if self.room_mapping.get(organizer) is None:
+            return
+        
+        if self.room_mapping[organizer].get(event) is None:
+            return
+        
+        self.room_mapping[organizer][event].remove(room_id)
+
+    @command.new(name="directauthorize", help="authorize access to your pretix")
+    @command.argument("token_str", pass_raw=True, required=True)
+    async def authorize_token(self, evt: MessageEvent, token_str: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        self.log.debug(token_str)
+        self.log.debug(type(token_str))
+        self.pretix.set_token_manually(token_str)
+
+        if self.pretix.is_authorized:
+            await evt.reply(f"Authorization successful")
+        else:
+            await evt.reply(f"Smth happened")
 
 
     @command.new(name="authorize", help="authorize access to your pretix")

@@ -1,5 +1,6 @@
 import requests
 import csv
+import json
 from typing import List, Dict, NewType
 from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
@@ -8,6 +9,7 @@ from requests_oauthlib import OAuth2Session
 from .auth import Token 
 
 from urllib.parse import urlparse, parse_qs
+from dataclasses import dataclass, field
 
 CSVData = NewType('CSVData', list[Dict[str, dict]])
 
@@ -20,6 +22,31 @@ def question_id_to_header(question_id:str):
         return "Matrix ID"
     
     return ""
+
+@dataclass
+class AttendeeMatrixInformation:
+    order_code: str
+    matrix_id: str
+    extra: dict = field(default_factory=lambda: {}, hash=False, compare=False)
+
+    @classmethod
+    def from_pretix_json(cls, json_data:dict, include_all_data=True):
+        """Create an instance of AttendeeMatrixInformation from our internal, simplified pretix JSON data format
+
+        Args:
+            json (dict): a dict of the json data from pretix
+
+        Returns:
+            AttendeeMatrixInformation: an object wrapping the most important parts of the attendee data
+        """
+        # explicitly make a copy so mutations dont leak outside this function
+        json_data = json_data.copy()
+        order_code = json_data['Order code']
+        matrix_id = json_data[question_id_to_header("matrix")]
+        del json_data['Order code']
+        del json_data[question_id_to_header("matrix")]
+
+        return cls(order_code, matrix_id, json_data if include_all_data else {})
 
 class Pretix:
 
@@ -43,6 +70,26 @@ class Pretix:
             # auto_refresh_url=self.token_url,
             # token_updater=self._update_token)#auto_refresh_kwargs=extra,
     
+    @staticmethod
+    def parse_invite_url(url):
+        try:
+            pretix_url = urlparse(pretix_url)
+        except:
+            raise ValueError(f"The input provided is not a valid URL")
+        
+        pretix_path = pretix_url.path
+        # remove trailing slash as it will mess with the upcoming logic
+        if pretix_path.endswith("/"):
+            pretix_path = pretix_path[:-1]
+
+        organizer = pretix_path.split("/")[-2]
+        event = pretix_path.split("/")[-1]
+       
+        if organizer == "" or event == "":
+            raise ValueError("Invalid input - please enter the pretix invitation URL. It should look like https://pretix.ey/<organizer>/<event>")
+        
+        return (organizer, event)
+
     def test_auth(self):
         # test the auth
         r = self.oauth.get(self.test_url)
@@ -79,6 +126,50 @@ class Pretix:
             token (json): the token to store
         """
         self._token = Token.from_json(token)
+
+    def handle_incoming_webhook(self, jsondata:dict) -> (bool, dict):
+        """ handle the minimal data returned by a pretix webhook and fetch additional data
+        see: https://docs.pretix.eu/en/latest/api/webhooks.html#receiving-webhooks
+
+        Args:
+            json (dict): the decoded JSON data from the webhook
+
+        Returns:
+            a tuple of (bool, dict) indicating whether the handling was successful.
+                the dict provides either an error message  (containing keys "error" for
+                user-facing or general error message, and "debug" for a more detailed
+                explaination of the issue) or the fetched and filtered pretix order data
+        """
+        # standard entries
+        notification_id = jsondata.get("notification_id")
+        organizer = jsondata.get("organizer")
+        event = jsondata.get("event")
+        code = jsondata.get("code")
+        action = jsondata.get("action")
+
+        # verify some things:
+        # is this for a valid action
+        if action != "pretix.event.order.paid":
+            return (False, {"error": f"could not process webhook for notification {notification_id}", "debug": "action did not match the expected value"})
+            
+        # is this for the expected event and organizer
+        # this info is not stored and cant be checked easily as currently implemented
+
+        # have we processed this order already?
+        if code in self._processed_rows:
+            return (False, {"error": f"could not process webhook for notification {notification_id}", "debug": f"order {code} has already been processed"})
+
+        # if not, fetch the full data and return it
+       
+        data = self.fetch_data(organizer, event, order_code=code)
+        data = self.extract_answers(data)
+        # embed organizer and event data so the matrix bot can look up what to do
+        result = {}
+        result["organizer"] = organizer
+        result["event"] = event
+        result["data"] = data
+
+        return (True, result)
 
 
     def get_auth_url(self, write=False):
@@ -121,6 +212,23 @@ class Pretix:
         self._update_token(token)
         return
 
+    def set_token_manually(self, token):
+        """complete the auth process by using a manually fetched token
+
+        Args:
+            token (dict or string): the token to use
+        """
+        if isinstance(token, str):
+            token = json.loads(token)
+
+        self.oauth = OAuth2Session(
+            self._client_id,
+            token=token,
+            auto_refresh_url=self.token_url,
+            token_updater=self._update_token)#auto_refresh_kwargs=extra,
+        self._update_token(token)
+        return
+
     def revoke_access_token(self):
         """attempt to revoke the access token if it is suspected to have bene compromized or is no longer needed
         """
@@ -141,8 +249,9 @@ class Pretix:
         """
         pass
 
-    def fetch_data(self, organizer, event) -> dict:
-        url = self.base_url + f"/organizers/{organizer}/events/{event}/orders/"
+    def fetch_data(self, organizer, event, order_code=None) -> dict:
+        order_code = f"{order_code}/" if order_code is not None else ""
+        url = self.base_url + f"/organizers/{organizer}/events/{event}/orders/" + order_code
 
         data = []
 
@@ -154,10 +263,11 @@ class Pretix:
             url = json_response.get('next')
         return data
 
-    def extract_answers(self, schema: dict, filter_processed=False) -> CSVData:
+    def extract_answers(self, schema: dict, filter_processed=False) -> List[AttendeeMatrixInformation]:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
                 ticket_id = position['order']
+                # if we havent seen this order already when processing in this series of paginated api calls
                 if not entries.get(ticket_id):
                     entries[ticket_id] = {
                         'Order code': ticket_id,
@@ -175,25 +285,21 @@ class Pretix:
 
         reduced_results = reduce(reducer, schema, {})
 
-        
-        result = list(reduced_results.values())
+        result = [AttendeeMatrixInformation.from_pretix_json(j) for j in reduced_results.values()]
 
         if not filter_processed:
             return result
         else:
-            return self.filter_processed_data(result, self._processed_rows)
+            return self._filter_processed_data(result, self._processed_rows)
 
 
-    def mark_as_processed(self, rows, replace=False):
-        """add some rows to the processed dataset indicating they were successful
+    def mark_as_processed(self, rows: List[AttendeeMatrixInformation], replace=False):
+        """add some attendees to the processed dataset indicating they were successfully invited
 
         Args:
-            rows (_type_): _description_
+            rows (List[AttendeeMatrixInformation]): a List of attendee data to mark as processed
         """
-        # filter the csv format down to just order IDs
-        processed_order_ids = self.filter_csv_columns(rows, filter_keys=["Order code"])
-        # simplify since csv format is now overkill
-        processed_order_ids = [d["Order code"] for d in processed_order_ids]
+        processed_order_ids = [d.order_code for d in rows]
 
         if replace:
             self._processed_rows = processed_order_ids
@@ -249,18 +355,16 @@ class Pretix:
         return [filter_dict(d, filter_keys) for d in csv_data]
     
 
-    def filter_processed_data(self, csv_data:CSVData, processed_csv_data:CSVData, filter_key:str="Order code") -> CSVData:
-        """filters csv data to remove data thats already been processed
+    def _filter_processed_data(self, data:List[AttendeeMatrixInformation], processed_ids:List[str]) -> List[AttendeeMatrixInformation]:
+        """filters attendee information to remove data thats already been processed
 
 
         Args:
-            csv_data (CSVData): the input csv data to process
-            processed_csv_data (CSVData): the input csv data containing processed records to filter out
+            data (List[AttendeeMatrixInformation]): the input attendee data to process
+            processed_ids (List[str]): the list of identifers of processed records to filter out
         
         Returns:
-            CSVData: the filtered version of the initial data with already-processed rows removed
+            List[AttendeeMatrixInformation]: the filtered version of the initial data with already-processed entries removed
         """
-        # extract just the order ids of the records that have been processed already
-        processed_ids = set([ r[filter_key] for r in processed_csv_data])
         # return a list of records from the full data as long as they are not in the list of processed records
-        return list(filter(lambda d: d[filter_key] not in processed_ids, csv_data))
+        return list(filter(lambda d: d.order_code not in processed_ids, data))

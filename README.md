@@ -118,3 +118,7 @@ You can set the name to whatever you like. Here are some ideas:
 - dave
 - evelyn
 - faith
+
+### Testing
+
+in an environment with all the dependencies installed, run `python3 -m unittest` to run the (minimal) unit tests
