@@ -241,6 +241,7 @@ class EventManagement(Plugin):
             await evt.reply(f"Error when testing authentication. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
             return
         
+        # TODO: allow this url to be optional if a room is mapped
         try:
             organizer, event = Pretix.parse_invite_url(pretix_url)
         except ValueError as e:
