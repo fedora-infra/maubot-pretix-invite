@@ -237,6 +237,14 @@ class EventManagement(Plugin):
                 if room in event:
                     return True
         return False
+
+    def _events_for_room(self, room):
+        events = []
+        for organizer in self.room_mapping:
+            for event in self.room_mapping[organizer]:
+                if room in event:
+                    events.append(f"{organizer}/{event}")
+        return events
     
     def _remove_room_from_map(self, room):
         for organizer in self.room_mapping:
@@ -321,5 +329,6 @@ class EventManagement(Plugin):
         await evt.reply(f"""
 Pretix status: {pretix_auth_status}
 Room Status: the current room {room_associated} assigned to an event
+Events: {','.join(self._events_for_room(room_id))}
 """)
         
