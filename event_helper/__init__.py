@@ -254,6 +254,7 @@ class EventManagement(Plugin):
             return
 
         self.log.debug(token_str)
+        self.log.debug(type(token_str))
         self.pretix.set_token_manually(token_str)
 
         if self.pretix.is_authorized:
