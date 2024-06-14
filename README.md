@@ -6,6 +6,8 @@ The code for this bot was originally based on the [maubot-pagure-notifications](
 ## Features
 - Can auth with pretix and fetch event attendees
 - Can bulk-invite attendees who havent yet been processed
+- can handle incoming webhooks from pretix for paid-for events and auto-invite those people to the event room(s)
+- can associate matrix rooms with events to (theoretically) invite users to multiple matrix rooms
 
 
 ## Dependencies
@@ -33,9 +35,18 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 
 `!batchinvite <pretix url>` this command, in combination with the pretix invitation url you probably distributed to your event participants (i.e. `https://pretix.eu/fedora/matrix-test/`) will allow the bot to query your event and grab participants matrix IDs and attempt to invite them to the room where the command was issued
 
+`!status` check the bot's auth status and the status of the current room (is it mapped to an event)
 
-![A screenshot of a matrix conversation showing the usage of the above commands](./demo/matrix%20auth%20and%20batch%20invite.png)
+`!setroom <pretix url>` this command, in combination with the pretix invitation url you probably distributed to your event participants (i.e. `https://pretix.eu/fedora/matrix-test/`) will associate this room with the event so the bot doesnt need the room ID to be specified when inviting people (such as through `!batchinvite` (TODO), or the webhook handler)
 
+`!unsetroom` this command will remove this room from all events it is currently associated with
+
+### Examples
+**Authorization and batch invite**
+![A screenshot of a matrix conversation showing the usage of the authorization and batch invite commands](./demo/matrix%20auth%20and%20batch%20invite.png)
+
+**Association and status**
+![A screenshot of a matrix conversation showing the usage of the association and status commands](./demo/room%20association%20and%20status.png)
 
 ## History and project Origins
 
