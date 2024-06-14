@@ -145,7 +145,7 @@ class EventManagement(Plugin):
 
             # this assumes we are only really processing one new attendee at a time
             if len(failed_invites) == 0:
-                self.oretix.mark_as_processed(result)
+                self.pretix.mark_as_processed(result)
             else:
                 self.log.error(f"unable to invite member {matrix_id}")
 
