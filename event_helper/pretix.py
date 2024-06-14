@@ -161,7 +161,7 @@ class Pretix:
         # if not, fetch the full data and return it
        
         data = self.fetch_data(organizer, event, order_code=code)
-        data = self.pretix.extract_answers(data)
+        data = self.extract_answers(data)
         # embed organizer and event data so the matrix bot can look up what to do
         data["organizer"] = organizer
         data["event"] = event
