@@ -229,7 +229,7 @@ class EventManagement(Plugin):
         if self.room_mapping[organizer].get(event) is None:
             return False
         
-        return True
+        return self.room_mapping[organizer].get(event)
 
     def _room_is_mapped(self, room):
         for organizer in self.room_mapping:
