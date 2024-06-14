@@ -267,6 +267,7 @@ class Pretix:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
                 ticket_id = position['order']
+                # if we havent seen this order already when processing in this series of paginated api calls
                 if not entries.get(ticket_id):
                     entries[ticket_id] = {
                         'Order code': ticket_id,
