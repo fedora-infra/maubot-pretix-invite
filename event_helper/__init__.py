@@ -13,6 +13,7 @@ from collections import Counter
 import string
 import validators
 from urllib.parse import urlparse
+from typing import List
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
