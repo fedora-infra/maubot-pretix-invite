@@ -58,8 +58,8 @@ class EventManagement(Plugin):
         success, result_dict = self.pretix.handle_incoming_webhook(json)
 
         if not success:
-            self.log.info(result.get("error"))
-            self.log.debug(result.get("debug"))
+            self.log.info(result_dict.get("error"))
+            self.log.debug(result_dict.get("debug"))
 
         # this assumes we are only really processing one new attendee at a time
         organizer = result_dict.get("data")[0].extra.get("organizer")

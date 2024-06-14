@@ -168,7 +168,7 @@ class Pretix:
         result["event"] = event
         result["data"] = data
 
-        return (True, data)
+        return (True, result)
 
 
     def get_auth_url(self, write=False):
