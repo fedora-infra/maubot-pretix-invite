@@ -300,6 +300,7 @@ class EventManagement(Plugin):
             await evt.reply("room deassociated from event successfully")
 
         else:
+            # TODO: fix me - this is surprising to users and may not be desired
             self.room_mapping.purge_room(room_id)
             await evt.reply("room deassociated from all events successfully")
 
