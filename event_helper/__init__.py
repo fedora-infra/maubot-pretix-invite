@@ -14,6 +14,7 @@ import string
 import validators
 from urllib.parse import urlparse
 from typing import List
+from dataclasses import dataclass, field
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
@@ -28,6 +29,64 @@ class Config(BaseProxyConfig):
         helper.copy("pretix_redirect_url")
         helper.copy("allowlist")
 
+@dataclass
+class EventRooms:
+    _mapping: dict = field(default_factory=lambda: {})
+
+    def rooms_by_event(self, organizer:str, event:str):
+        if self.room_mapping.get(organizer) is None:
+            return set()
+        
+        if self.room_mapping[organizer].get(event) is None:
+            return set()
+        
+        return self.room_mapping[organizer].get(event)
+    
+    def add(self, organizer:str, event:str, room_id:str):
+        if self._mapping.get(organizer) is None:
+            self._mapping[organizer] = {} 
+        
+        if self._mapping[organizer].get(event) is None:
+            self._mapping[organizer][event] = set()
+        
+        self._mapping[organizer][event].add(room_id)
+
+    def remove(self, organizer:str, event:str, room_id:str):
+        if room_id in self.rooms_by_event(organizer,event):
+            self._mapping[organizer][event].remove(room_id)
+
+
+    def room_is_mapped(self, room:str):
+        for organizer in self._mapping:
+            for event in self._mapping[organizer]:
+                if room in event:
+                    return True
+        return False
+
+    def events_for_room(self, room:str):
+        """return a list of events that a room is mapped to in "organizer/event" format
+
+        Args:
+            room (str): the id of the room to return events for
+
+        Returns:
+            List[str]: the list of events the room is part of
+        """
+        events = []
+        for organizer in self._mapping:
+            for event in self._mapping[organizer]:
+                if room in self._mapping[organizer][event]:
+                    events.append(f"{organizer}/{event}")
+        return events
+    
+    def purge_room(self, room):
+        """remove a room from all events it is mapped to
+        """
+        for organizer in self._mapping:
+            for event in self._mapping[organizer]:
+                if room in event:
+                    self._mapping[organizer][event].remove(room)
+
 
 class EventManagement(Plugin):
     @classmethod
@@ -39,7 +98,7 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
-        self.room_mapping = {}
+        self.room_mapping = EventRooms()
         self.pretix = Pretix(
             self.config["pretix_instance_url"],
             self.config["pretix_client_id"],
@@ -68,7 +127,7 @@ class EventManagement(Plugin):
         matrix_id = result_dict.get("data")[0].matrix_id
 
         try:
-            room_ids = list(self.room_mapping[organizer][event])
+            room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
         except (KeyError, TypeError) as e:
             # if project_name not in self.config["projects"]:
             self.log.error(
@@ -213,44 +272,9 @@ class EventManagement(Plugin):
         
         # store the association
         room_id = evt.room_id
-        if self.room_mapping.get(organizer) is None:
-            self.room_mapping[organizer] = {} 
-        
-        if self.room_mapping[organizer].get(event) is None:
-            self.room_mapping[organizer][event] = set()
-        
-        self.room_mapping[organizer][event].add(room_id)
+        self.room_mapping.add(organizer,event, room_id)
         await evt.reply("room associated successfully")
 
-    def _get_rooms(self, organizer, event):
-        if self.room_mapping.get(organizer) is None:
-            return set()
-        
-        if self.room_mapping[organizer].get(event) is None:
-            return set()
-        
-        return self.room_mapping[organizer].get(event)
-
-    def _room_is_mapped(self, room):
-        for organizer in self.room_mapping:
-            for event in self.room_mapping[organizer]:
-                if room in event:
-                    return True
-        return False
-
-    def _events_for_room(self, room):
-        events = []
-        for organizer in self.room_mapping:
-            for event in self.room_mapping[organizer]:
-                if room in self.room_mapping[organizer][event]:
-                    events.append(f"{organizer}/{event}")
-        return events
-    
-    def _remove_room_from_map(self, room):
-        for organizer in self.room_mapping:
-            for event in self.room_mapping[organizer]:
-                if room in event:
-                    self.room_mapping[organizer][event].remove(room)
     
     @command.new(name="unsetroom", help="de-associate the current matrix room with a specified pretix event")
     @command.argument("pretix_url", pass_raw=True, required=False)
@@ -269,14 +293,14 @@ class EventManagement(Plugin):
                 await evt.reply(e)
             
             # remove the association
-            if self._get_rooms(organizer, event) == set():
+            if self.room_mapping.rooms_by_event(organizer, event) == set():
                 await evt.reply("room was not part of the specified event")
                 return
-            self.room_mapping[organizer][event].remove(room_id)
+            self.room_mapping.remove(organizer, event, room_id)
             await evt.reply("room deassociated from event successfully")
 
         else:
-            self._remove_room_from_map(room_id)
+            self.room_mapping.purge_room(room_id)
             await evt.reply("room deassociated from all events successfully")
 
 
@@ -324,11 +348,11 @@ class EventManagement(Plugin):
         
         room_id = evt.room_id
         pretix_auth_status = "authorized" if self.pretix.is_authorized else "not authorized"
-        room_associated = "is" if self._room_is_mapped(room_id) else "is not"
+        room_associated = "is" if self.room_mapping.room_is_mapped(room_id) else "is not"
 
         await evt.reply(f"""
 Pretix status: {pretix_auth_status}
 Room Status: the current room {room_associated} assigned to an event
-Events: {','.join(self._events_for_room(room_id))}
+Events: {','.join(self.room_mapping.events_for_room(room_id))}
 """)
         
