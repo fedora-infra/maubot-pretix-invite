@@ -222,7 +222,7 @@ class EventManagement(Plugin):
         self.room_mapping[organizer][event].add(room_id)
         await evt.reply("room associated successfully")
 
-    def _has_room_mapping(self, organizer, event):
+    def _get_rooms(self, organizer, event):
         if self.room_mapping.get(organizer) is None:
             return False
         
@@ -253,7 +253,7 @@ class EventManagement(Plugin):
         
         # remove the association
         room_id = evt.room_id
-        if not self._has_room_mapping(organizer, event):
+        if not self._get_rooms(organizer, event):
             return
         
         self.room_mapping[organizer][event].remove(room_id)
