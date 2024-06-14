@@ -220,6 +220,7 @@ class EventManagement(Plugin):
             self.room_mapping[organizer][event] = set()
         
         self.room_mapping[organizer][event].add(room_id)
+        await evt.reply("room associated successfully")
 
     def _has_room_mapping(self, organizer, event):
         if self.room_mapping.get(organizer) is None:
@@ -256,6 +257,8 @@ class EventManagement(Plugin):
             return
         
         self.room_mapping[organizer][event].remove(room_id)
+        await evt.reply("room deassociated successfully")
+
 
     @command.new(name="directauthorize", help="authorize access to your pretix")
     @command.argument("token_str", pass_raw=True, required=True)
