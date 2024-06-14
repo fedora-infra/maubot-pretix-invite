@@ -29,7 +29,7 @@ class AttendeeMatrixInformation:
     extra: dict = field(default={})
 
     @classmethod
-    def from_pretix_json(cls, json:dict, include_all_data=True) -> AttendeeMatrixInformation:
+    def from_pretix_json(cls, json:dict, include_all_data=True):
         """Create an instance of AttendeeMatrixInformation from pretix JSON data
 
         Args:
