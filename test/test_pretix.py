@@ -7,6 +7,8 @@ class TestPretix(unittest.TestCase):
         self.assertEqual(question_id_to_header("matrix"), "Matrix ID")
         # self.assertEqual(question_id_to_header("matrix"), "Matrix ID")
 
+    def test_parse_url(self):
+        self.assertEqual(Pretix.parse_invite_url("https://pretix.eu/fedora/matrix-test"), ("fedora", "matrix-test"))
 
 
     def test_extract_answers(self):
