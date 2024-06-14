@@ -30,8 +30,8 @@ class AttendeeMatrixInformation:
     extra: dict = field(default_factory={})
 
     @classmethod
-    def from_pretix_json(cls, json:dict, include_all_data=True):
-        """Create an instance of AttendeeMatrixInformation from pretix JSON data
+    def from_pretix_json(cls, json_data:dict, include_all_data=True):
+        """Create an instance of AttendeeMatrixInformation from our internal, simplified pretix JSON data format
 
         Args:
             json (dict): a dict of the json data from pretix
@@ -40,13 +40,13 @@ class AttendeeMatrixInformation:
             AttendeeMatrixInformation: an object wrapping the most important parts of the attendee data
         """
         # explicitly make a copy so mutations dont leak outside this function
-        json = dict(json)
-        order_code = json['Order code']
-        matrix_id = json[question_id_to_header("matrix")]
-        del json['Order code']
-        del json[question_id_to_header("matrix")]
+        json_data = dict(json_data)
+        order_code = json_data['Order code']
+        matrix_id = json_data[question_id_to_header("matrix")]
+        del json_data['Order code']
+        del json_data[question_id_to_header("matrix")]
 
-        return cls(order_code, matrix_id, json if include_all_data else {})
+        return cls(order_code, matrix_id, json_data if include_all_data else {})
 
 class Pretix:
 
@@ -127,7 +127,7 @@ class Pretix:
         """
         self._token = Token.from_json(token)
 
-    def handle_incoming_webhook(self, json:dict) -> (bool, dict):
+    def handle_incoming_webhook(self, jsondata:dict) -> (bool, dict):
         """ handle the minimal data returned by a pretix webhook and fetch additional data
         see: https://docs.pretix.eu/en/latest/api/webhooks.html#receiving-webhooks
 
@@ -141,11 +141,11 @@ class Pretix:
                 explaination of the issue) or the fetched and filtered pretix order data
         """
         # standard entries
-        notification_id = json.get("notification_id")
-        organizer = json.get("organizer")
-        event = json.get("event")
-        code = json.get("code")
-        action = json.get("action")
+        notification_id = jsondata.get("notification_id")
+        organizer = jsondata.get("organizer")
+        event = jsondata.get("event")
+        code = jsondata.get("code")
+        action = jsondata.get("action")
 
         # verify some things:
         # is this for a valid action
