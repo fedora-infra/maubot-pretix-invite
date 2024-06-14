@@ -238,27 +238,38 @@ class EventManagement(Plugin):
                     return True
         return False
     
+    def _remove_room_from_map(self, room):
+        for organizer in self.room_mapping:
+            for event in self.room_mapping[organizer]:
+                if room in event:
+                    self.room_mapping[organizer][event].remove(room)
+    
     @command.new(name="unsetroom", help="de-associate the current matrix room with a specified pretix event")
-    @command.argument("pretix_url", pass_raw=True, required=True)
+    @command.argument("pretix_url", pass_raw=True, required=False)
     async def unsetroom(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
 
-        try:
-            organizer, event = Pretix.parse_invite_url(pretix_url)
-        except ValueError as e:
-            await evt.reply(e)
-        
-        # remove the association
         room_id = evt.room_id
-        if self._get_rooms(organizer, event) == set():
-            await evt.reply("room was not part of an event")
-            return
-        
-        self.room_mapping[organizer][event].remove(room_id)
-        await evt.reply("room deassociated successfully")
+
+        if pretix_url is not None:
+            try:
+                organizer, event = Pretix.parse_invite_url(pretix_url)
+            except ValueError as e:
+                await evt.reply(e)
+            
+            # remove the association
+            if self._get_rooms(organizer, event) == set():
+                await evt.reply("room was not part of the specified event")
+                return
+            self.room_mapping[organizer][event].remove(room_id)
+            await evt.reply("room deassociated from event successfully")
+
+        else:
+            self._remove_room_from_map(room_id)
+            await evt.reply("room deassociated from all events successfully")
 
 
     # @command.new(name="directauthorize", help="authorize access to your pretix")
