@@ -62,8 +62,9 @@ class EventManagement(Plugin):
             self.log.debug(result_dict.get("debug"))
 
         # this assumes we are only really processing one new attendee at a time
-        organizer = result_dict.get("data")[0].extra.get("organizer")
-        event = result_dict.get("data")[0].extra.get("event")
+        organizer = result_dict.get("organizer")
+        event = result_dict.get("event")
+        self.log.debug(result_dict.get("data"))
         matrix_id = result_dict.get("data")[0].matrix_id
 
         try:
