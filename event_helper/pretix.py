@@ -285,9 +285,7 @@ class Pretix:
 
         reduced_results = reduce(reducer, schema, {})
 
-        
         result = [AttendeeMatrixInformation.from_pretix_json(j) for j in reduced_results.values()]
-
 
         if not filter_processed:
             return result
