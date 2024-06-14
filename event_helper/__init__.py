@@ -260,22 +260,20 @@ class EventManagement(Plugin):
         await evt.reply("room deassociated successfully")
 
 
-    @command.new(name="directauthorize", help="authorize access to your pretix")
-    @command.argument("token_str", pass_raw=True, required=True)
-    async def authorize_token(self, evt: MessageEvent, token_str: str) -> None:
-        # permission check
-        if evt.sender not in self.config["allowlist"]:
-            await evt.reply(f"{evt.sender} is not allowed to execute this command")
-            return
+    # @command.new(name="directauthorize", help="authorize access to your pretix")
+    # @command.argument("token_str", pass_raw=True, required=True)
+    # async def authorize_token(self, evt: MessageEvent, token_str: str) -> None:
+    #     # permission check
+    #     if evt.sender not in self.config["allowlist"]:
+    #         await evt.reply(f"{evt.sender} is not allowed to execute this command")
+    #         return
 
-        self.log.debug(token_str)
-        self.log.debug(type(token_str))
-        self.pretix.set_token_manually(token_str)
+    #     self.pretix.set_token_manually(token_str)
 
-        if self.pretix.is_authorized:
-            await evt.reply(f"Authorization successful")
-        else:
-            await evt.reply(f"Smth happened")
+    #     if self.pretix.is_authorized:
+    #         await evt.reply(f"Authorization successful")
+    #     else:
+    #         await evt.reply(f"Smth happened")
 
 
     @command.new(name="authorize", help="authorize access to your pretix")
