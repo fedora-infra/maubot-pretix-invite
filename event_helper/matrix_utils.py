@@ -15,7 +15,7 @@ from mautrix.types import (
     Membership,
 )
 from mautrix.util.logging import TraceLogger
-
+import re
 
 class UserInfo(TypedDict):
     power_level: Optional[int]
@@ -68,7 +68,14 @@ def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
     
     domain = possible_matrix_id.split(":")[1]
 
-    if not validators.domain(domain):
+    domain_pattern = re.compile(
+        r'^(([a-zA-Z]{1})|([a-zA-Z]{1}[a-zA-Z]{1})|'
+        r'([a-zA-Z]{1}[0-9]{1})|([0-9]{1}[a-zA-Z]{1})|'
+        r'([a-zA-Z0-9][-_.a-zA-Z0-9]{0,61}[a-zA-Z0-9]))\.'
+        r'([a-zA-Z]{2,13}|[a-zA-Z0-9-]{2,30}.[a-zA-Z]{2,3})$'
+    )
+
+    if domain_pattern.match(domain) is None:
         raise ValueError(f"the domain portion of the matrix ID is not valid")
 
     # The length of a user ID, including the @ sigil and the domain, MUST NOT exceed 255 characters.

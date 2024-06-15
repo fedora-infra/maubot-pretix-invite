@@ -11,7 +11,6 @@ from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
 from collections import Counter
 import string
-import validators
 from urllib.parse import urlparse
 from typing import List
 from dataclasses import dataclass, field
