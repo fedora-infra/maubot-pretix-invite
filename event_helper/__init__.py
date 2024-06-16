@@ -1,5 +1,7 @@
 import hashlib
 import hmac
+from typing import List
+from dataclasses import dataclass, field
 
 import jinja2
 from aiohttp.web import Response
@@ -9,12 +11,6 @@ from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
-from collections import Counter
-import string
-import validators
-from urllib.parse import urlparse
-from typing import List
-from dataclasses import dataclass, field
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
