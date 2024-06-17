@@ -119,16 +119,8 @@ class EventManagement(Plugin):
         attendees = result_dict.get("data")
         order_id = attendees[0].order_code
 
-        try:
-            room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
-        except (KeyError, TypeError) as e:
-            # if project_name not in self.config["projects"]:
-            self.log.error(
-                f"event {event} from organizer {organizer} is sending me a webhook, "
-                f"but I cant find a room to invite them to because no room has been specified!"
-            )
-            return Response()
-
+        room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
+        
         if len(room_ids) == 0:
             self.log.debug(f"found no configured rooms for the registration {order_id} received via webhook")
         else:
