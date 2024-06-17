@@ -72,6 +72,7 @@ class Pretix:
     
     @staticmethod
     def parse_invite_url(pretix_url):
+        # TODO: extract and validate domain
         try:
             pretix_url = urlparse(pretix_url)
         except:

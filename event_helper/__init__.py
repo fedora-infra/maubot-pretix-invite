@@ -258,6 +258,8 @@ class EventManagement(Plugin):
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
 
+
+        # TODO: check domain
         try:
             organizer, event = Pretix.parse_invite_url(pretix_url)
         except ValueError as e:
