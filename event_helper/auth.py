@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, timezone
 
 @dataclass
