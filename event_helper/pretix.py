@@ -72,14 +72,24 @@ class Pretix:
         #     'client_id': client_id,
         #     'client_secret': r'potato',
         # }
-        self.oauth = OAuth2Session(
-            client_id,
-            scope=["read"],
-            redirect_uri=redirect_uri
-        )
-            # token=token,
-            # auto_refresh_url=self.token_url,
-            # token_updater=self._update_token)#auto_refresh_kwargs=extra,
+        if self._token is not None:
+
+            self.oauth = OAuth2Session(
+                client_id,
+                token=self._token.to_dict(),
+                scope=["read"],
+                redirect_uri=redirect_uri,
+                auto_refresh_url=self.token_url,
+                token_updater=self._update_token #auto_refresh_kwargs=extra,
+            )
+        else:
+            self.oauth = OAuth2Session(
+                client_id,
+                scope=["read"],
+                redirect_uri=redirect_uri
+            )
+            
+            
     
     @staticmethod
     def parse_invite_url(pretix_url):
