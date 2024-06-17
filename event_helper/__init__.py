@@ -116,8 +116,8 @@ class EventManagement(Plugin):
         # this assumes we are only really processing one new attendee at a time
         organizer = result_dict.get("organizer")
         event = result_dict.get("event")
-        self.log.debug(result_dict.get("data"))
-        matrix_id = result_dict.get("data")[0].matrix_id
+        attendees = result_dict.get("data")
+        order_id = attendees[0].order_code
 
         try:
             room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
