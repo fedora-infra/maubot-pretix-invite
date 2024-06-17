@@ -23,7 +23,7 @@ class Token:
         if json.get("expires_at") is not None:
             expiry = datetime.fromtimestamp(json.get("expires_at"), tz=timezone.utc)
         else:
-            now = datetime.now()
+            now = datetime.now(tz=timezone.utc)
             expires_in = timedelta(seconds=json["expires_in"])
             expiry = now + expires_in
         return cls(json["access_token"], json["refresh_token"], json["token_type"], json["scope"], expiry)
@@ -33,7 +33,7 @@ class Token:
 
     def to_dict(self) -> str:
         expires_at = self.expires_at
-        now = datetime.now()
+        now = datetime.now(tz=timezone.utc)
         expires_in = expires_at - now
 
         data = asdict(self)
