@@ -5,6 +5,7 @@ from typing import List, Dict, NewType
 from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
 from mautrix.util.logging import TraceLogger
+from pathlib import Path
 
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
@@ -51,26 +52,44 @@ class AttendeeMatrixInformation:
 
 class Pretix:
 
-    def __init__(self, instance_url, client_id, client_secret, redirect_uri, log:TraceLogger):
+    def __init__(self, instance_url, client_id, client_secret, redirect_uri, log:TraceLogger, token_storage_file="/data/pretix-token.json"):
         self._instance_url = instance_url
         self._client_secret = client_secret
         self._processed_rows = []
         self._client_id = client_id
         self.logger = log
+        self.token_storage_file = Path(token_storage_file)
+
+        # if token storage file exists, save it
+        if self.token_storage_file.exists():
+            data = self.token_storage_file.read_text()
+            self._token = Token.from_json(json.loads(data))
+            self.logger.debug("token loaded from file")
+
         # most providers will ask you for extra credentials to be passed along
         # when refreshing tokens, usually for authentication purposes.
         # extra = {
         #     'client_id': client_id,
         #     'client_secret': r'potato',
         # }
-        self.oauth = OAuth2Session(
-            client_id,
-            scope=["read"],
-            redirect_uri=redirect_uri
-        )
-            # token=token,
-            # auto_refresh_url=self.token_url,
-            # token_updater=self._update_token)#auto_refresh_kwargs=extra,
+        if self._token is not None:
+
+            self.oauth = OAuth2Session(
+                client_id,
+                token=self._token.to_dict(),
+                scope=["read"],
+                redirect_uri=redirect_uri,
+                auto_refresh_url=self.token_url,
+                token_updater=self._update_token #auto_refresh_kwargs=extra,
+            )
+        else:
+            self.oauth = OAuth2Session(
+                client_id,
+                scope=["read"],
+                redirect_uri=redirect_uri
+            )
+            
+            
     
     @staticmethod
     def parse_invite_url(pretix_url):
@@ -129,6 +148,7 @@ class Pretix:
             token (json): the token to store
         """
         self._token = Token.from_json(token)
+        self.token_storage_file.write_text(json.dumps(token), 'utf-8')
 
     def handle_incoming_webhook(self, jsondata:dict) -> (bool, dict):
         """ handle the minimal data returned by a pretix webhook and fetch additional data
