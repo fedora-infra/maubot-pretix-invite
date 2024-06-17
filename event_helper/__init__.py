@@ -137,7 +137,7 @@ class EventManagement(Plugin):
                 room_id = room
         
             self.log.debug(f"sending invite from webhook to {room_id}")
-            failed_invites = await self.invite_attendees(room_id, data)
+            failed_invites = await self.invite_attendees(room_id, attendees)
 
             # this assumes we are only really processing one new attendee at a time
             if len(failed_invites) == 0:
