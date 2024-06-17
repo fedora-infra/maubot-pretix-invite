@@ -30,13 +30,13 @@ class EventRooms:
     _mapping: dict = field(default_factory=lambda: {})
 
     def rooms_by_event(self, organizer:str, event:str):
-        if self.room_mapping.get(organizer) is None:
+        if self._mapping.get(organizer) is None:
             return set()
         
-        if self.room_mapping[organizer].get(event) is None:
+        if self._mapping[organizer].get(event) is None:
             return set()
         
-        return self.room_mapping[organizer].get(event)
+        return self._mapping[organizer].get(event)
     
     def add(self, organizer:str, event:str, room_id:str):
         if self._mapping.get(organizer) is None:
