@@ -122,9 +122,10 @@ class EventManagement(Plugin):
         room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
         
         if len(room_ids) == 0:
-            self.log.debug(f"found no configured rooms for the registration {order_id} received via webhook")
+            self.log.debug(f"found no configured rooms for event {event} from organizer {organizer}."
+            f"Unable to add attendee from registration {order_id} received via webhook")
         else:
-            self.log.debug(f"found {len(room_ids)} rooms for the event in the webhook")
+            self.log.debug(f"webhook found {len(room_ids)} rooms for event {event} from organizer {organizer}")
 
 
         for room in room_ids:
