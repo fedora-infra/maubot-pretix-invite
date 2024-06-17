@@ -129,10 +129,13 @@ class EventManagement(Plugin):
             )
             return Response()
 
-        for room_id in room_ids:
-        #   if room[0] == "#":
-        #       roomaliasinfo = await self.client.resolve_room_alias(room)
-        #       room = roomaliasinfo.room_id
+        for room in room_ids:
+            if room[0] == "#":
+                roomaliasinfo = await self.client.resolve_room_alias(room)
+                room_id = roomaliasinfo.room_id
+            else:
+                room_id = room
+        
             self.log.debug(f"sending invite from webhook to {room_id}")
             failed_invites = await self.invite_attendees(room_id, data)
 
