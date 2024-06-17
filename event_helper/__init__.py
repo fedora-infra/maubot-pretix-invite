@@ -133,7 +133,7 @@ class EventManagement(Plugin):
         #       roomaliasinfo = await self.client.resolve_room_alias(room)
         #       room = roomaliasinfo.room_id
             self.log.debug(f"sending invite from webhook to {room_id}")
-            failed_invites = self.invite_attendees(room_id, data)
+            failed_invites = await self.invite_attendees(room_id, data)
 
             # this assumes we are only really processing one new attendee at a time
             if len(failed_invites) == 0:
@@ -183,7 +183,7 @@ class EventManagement(Plugin):
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
 
 
-    def invite_attendees(self, room_id:str, attendees:List[AttendeeMatrixInformation]):
+    async def invite_attendees(self, room_id:str, attendees:List[AttendeeMatrixInformation]):
         """attempt to invite attendees
 
         Args:
@@ -212,7 +212,7 @@ class EventManagement(Plugin):
                 valid_users[validated_id] = UserInfo()
 
         if len(valid_users) > 0:
-            self.matrix_utils.ensure_room_invitees(room_id, valid_users)
+            await self.matrix_utils.ensure_room_invitees(room_id, valid_users)
         else:
             self.log.debug(f"no users with valid Matrix IDs to invite")
 
@@ -246,7 +246,7 @@ class EventManagement(Plugin):
         data = self.pretix.fetch_data(organizer, event)
         data = self.pretix.extract_answers(data, filter_processed=True)
 
-        failed_invites = self.invite_attendees(room_id, data)
+        failed_invites = await self.invite_attendees(room_id, data)
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
