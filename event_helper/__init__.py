@@ -129,6 +129,12 @@ class EventManagement(Plugin):
             )
             return Response()
 
+        if len(room_ids) == 0:
+            self.log.debug(f"found no configured rooms for the registration {order_id} received via webhook")
+        else:
+            self.log.debug(f"found {len(room_ids)} rooms for the event in the webhook")
+
+
         for room in room_ids:
             if room[0] == "#":
                 roomaliasinfo = await self.client.resolve_room_alias(room)
