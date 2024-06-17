@@ -258,12 +258,21 @@ class Pretix:
 
         data = []
 
-        while url:
+        if order_code is None:
+            # many orders are being requested.
+            while url:
+                response = self.oauth.get(url)
+                response.raise_for_status()
+                json_response = response.json()
+                data.extend(json_response.get('results', []))
+                url = json_response.get('next')
+        else:
+            # one order is requested
             response = self.oauth.get(url)
             response.raise_for_status()
             json_response = response.json()
-            data.extend(json_response.get('results', []))
-            url = json_response.get('next')
+            data.append(json_response)
+
         return data
 
     def extract_answers(self, schema: dict, filter_processed=False) -> List[AttendeeMatrixInformation]:
