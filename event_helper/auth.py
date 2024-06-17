@@ -24,8 +24,8 @@ class Token:
             expiry = datetime.fromtimestamp(json.get("expires_at"), tz=timezone.utc)
         else:
             now = datetime.now()
-            exires_in = timedelta(seconds=json["expires_in"])
-            expiry = now + exires_in
+            expires_in = timedelta(seconds=json["expires_in"])
+            expiry = now + expires_in
         return cls(json["access_token"], json["refresh_token"], json["token_type"], json["scope"], expiry)
 
     def to_json(self) -> str:
@@ -34,7 +34,7 @@ class Token:
     def to_dict(self) -> str:
         expires_at = self.expires_at
         now = datetime.now()
-        exires_in = expires_at - now
+        expires_in = expires_at - now
 
         data = asdict(self)
         del data["expires_at"]
