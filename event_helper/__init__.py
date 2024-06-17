@@ -95,7 +95,8 @@ class EventManagement(Plugin):
             self.config["pretix_instance_url"],
             self.config["pretix_client_id"],
             self.config["pretix_client_secret"],
-            self.config["pretix_redirect_url"]
+            self.config["pretix_redirect_url"],
+            self.log
         )
 
         self.webapp.add_route("POST", "/notify", self.handle_request)

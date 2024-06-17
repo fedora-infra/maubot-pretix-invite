@@ -4,6 +4,7 @@ import json
 from typing import List, Dict, NewType
 from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
+from mautrix.util.logging import TraceLogger
 
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
@@ -50,11 +51,12 @@ class AttendeeMatrixInformation:
 
 class Pretix:
 
-    def __init__(self, instance_url, client_id, client_secret, redirect_uri):
+    def __init__(self, instance_url, client_id, client_secret, redirect_uri, log:TraceLogger):
         self._instance_url = instance_url
         self._client_secret = client_secret
         self._processed_rows = []
         self._client_id = client_id
+        self.logger = log
         # most providers will ask you for extra credentials to be passed along
         # when refreshing tokens, usually for authentication purposes.
         # extra = {
