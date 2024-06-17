@@ -118,6 +118,7 @@ class EventManagement(Plugin):
         event = result_dict.get("event")
         attendees = result_dict.get("data")
         order_id = attendees[0].order_code
+        matrix_id = attendees[0].matrix_id
 
         room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
         
