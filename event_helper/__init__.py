@@ -53,11 +53,7 @@ class EventRooms:
 
 
     def room_is_mapped(self, room:str):
-        for organizer in self._mapping:
-            for event in self._mapping[organizer]:
-                if room in event:
-                    return True
-        return False
+        return len(self.events_for_room(room)) > 0
 
     def events_for_room(self, room:str):
         """return a list of events that a room is mapped to in "organizer/event" format
