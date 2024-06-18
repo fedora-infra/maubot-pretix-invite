@@ -72,7 +72,7 @@ class Pretix:
         #     'client_id': client_id,
         #     'client_secret': r'potato',
         # }
-        if self._token is not None:
+        if hasattr(self, '_token') and self._token is not None:
 
             self.oauth = OAuth2Session(
                 client_id,
