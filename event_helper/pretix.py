@@ -120,6 +120,8 @@ class Pretix:
     @property
     def is_authorized(self):
         return self.oauth.authorized
+        # TODO: test auth with organizer and event
+
         
     @property
     def _has_token(self):
@@ -140,6 +142,8 @@ class Pretix:
     @property
     def test_url(self):
         return self.base_url + "/me"
+
+        # TODO: test auth with organizer and event
 
     def _update_token(self, token:dict):
         """in-memory token storage
