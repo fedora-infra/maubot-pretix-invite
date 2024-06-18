@@ -36,6 +36,9 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 ![A screenshot of a matrix conversation showing the usage of the association and status commands](./demo/room%20association%20and%20status.png)
 
 
+## How it works
+
+![A diagram depicting the flow of information from a users registration in pretix, through a webhook, to this plugin, and ultimately to a matrix room](./Data%20flow%20and%20ownership-bg.svg)
 
 ## Dependencies
 External things the bot needs to run well:
@@ -72,6 +75,13 @@ If you would simply like to get this bot running and start using it, follow thes
 ## Contributing to bot development
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on the development workflow
+
+
+## Legal and privacy information
+
+This project may handle, and possibly store, information that could be considered "personal information" under various privacy rules such as the GDPR. While this bot tries to use as little information as possible in order to operate it is ultimately the responsibility of the event hosts and operators of this bot to ensure [that its use of information](#how-it-works) is compliant with the laws in your area.  
+
+## Howtos
 
 ### Pretix
 
