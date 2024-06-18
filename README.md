@@ -35,6 +35,9 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 **Association and status**
 ![A screenshot of a matrix conversation showing the usage of the association and status commands](./demo/room%20association%20and%20status.png)
 
+**webhook auto-invites**
+![A screenshot of a matrix conversation showing a matrix room configured with an event association and automatically inviting some newly-registered users](./demo/webhook-demo.png)
+
 
 ## How it works
 
