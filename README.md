@@ -100,7 +100,7 @@ Here's what you would need to set the values to for the matrix id question (igno
 
 ![the questions menu in pretix showing a configured matrix ID question](./demo/pretix%20questions%20setup.png)
 
-Currently this bot is hardcoded to look for an `internal identifier` value of `matrix`. This can be found under the advanced manu when editing the question. In the future this may be configurable
+Currently this bot is hardcoded to look for an `internal identifier` value of `matrix`. This can be found under the advanced menu when editing the question. In the future this may be configurable.
 
 #### Setting up webhooks
 
