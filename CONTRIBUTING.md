@@ -46,3 +46,12 @@ You can set the name to whatever you like. Here are some ideas:
 ### Testing
 
 In an environment with all the dependencies installed, run `python3 -m unittest` to run the (minimal) unit tests
+
+### Pretix
+
+#### Getting Credentials
+
+
+There are a couple paths for getting credentials:
+1. [Generate a token at the team level](https://docs.pretix.eu/en/latest/api/tokenauth.html#obtaining-an-api-token) - this requires admin access to the team and probably some special manual editing of the pretix token file to get the bot to accept it (as this is not yet a supported usecase)
+2. (the one this bot uses) - Get a token [via an oauth grant](https://docs.pretix.eu/en/latest/api/oauth.html) 

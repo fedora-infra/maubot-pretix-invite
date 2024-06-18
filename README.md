@@ -40,34 +40,40 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 ## Dependencies
 External things the bot needs to run well:
 - python dependencies from requirements.txt
-- a public facing web address (optionally with HTTPS, this is for webhook calls from pretix)
+- a public facing web address (optionally with HTTPS, this is for webhook calls from pretix).
 - credentials for pretix
-- a pretix event to invite people to
+- a pretix event to invite people to (and therefore a pretix account)
+- a matrix homeserver to connect to with the [credentials](https://webapps.stackexchange.com/a/138497) for an account on this homeserver
 
 
-## Configuration
+## Basic Setup
 
-To configure the bot, modify `base-config.yaml` to add your pretix tokens and the matrix IDs of some authorized users.
+If you would simply like to get this bot running and start using it, follow these steps. 
+
+1. [Ensure your pretix event is set up](#setting-up-an-event)
+2. Using your pretix account, [register an Oauth application](https://pretix.eu/control/settings/oauth/apps/) ([docs](https://docs.pretix.eu/en/latest/api/oauth.html#registering-an-application)) to get a pretix Client ID and Client Secret.
+3. Build the bot container (this is a standard maubot container with the bot's python dependencies installed). This can be done with `docker build -t maubot-custom .`
+4. Run the bot's container per the [standard maubot container setup](https://docs.mau.fi/maubot/usage/setup/docker.html).
+    - Be sure to set up your matrix homeserver and an admin username and password in your `config.yaml` as you'll need these later
+    - If you plan to use the webhooks feature to auto-invite attendees as they register, ensure the domain you plan to use is also configured in `config.yaml`
+5. From an environment containing maubot (such as a pipenv environment with `maubot` and the other dependencies from requirements.txt installed), open this repository run `mbc build` to build the plugin and save it to a `.mbp` compressed file in the current directory
+6. Login to maubot via the web interface upload the plugin. Configure the client instance for your bot using the homeserver you configured earlier, as well as your [access token](https://webapps.stackexchange.com/a/138497) and device ID for your account on this server
+7. Create a new instance of your bot, selecting your client as the "primary user" and the uploaded plugin for the "type".
+8. Edit the configuration options in the box on the instance page to add your pretix secrets and the matrix IDs of the users you want to be authorized to use the bot.
+    - for the redirect URL, simply enter `https://localhost:8000/` - in the future this may support reusing the same public facing web domain thats used by the incoming webhook endpoint
+9. Start the bot
+
+**If you want to use the webhooks feature of the bot**
+
+10. Open the logs in the maubot web interface. You should see a line that starts with `Webhook URL is:`. The webhook url that follows is the domain you may have configured in step 4 with `/_matrix/maubot/plugin/<instance id>/notify` as the url. Now would be a good time to set up your proxy, or whatever else is needed to ensure that this URL is publicly accessible.
+9. [Set up the webhook in pretix](#setting-up-webhooks) 
 
 
-## Development
+## Contributing to bot development
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on the development workflow
 
 ### Pretix
-
-#### Getting Credentials
-
-
-The main thing this bot needs to work is credentials for the event ticketing platform Pretix. Either of these options will likely require elevated permissions on the Fedora pretix team, or someone willing to authenticate for you.
-
-
-There are a couple paths for getting credentials:
-1. [Generate a token at the team level](https://docs.pretix.eu/en/latest/api/tokenauth.html#obtaining-an-api-token) 
-2. (the one this bot uses) - Get a token [via an oauth grant](https://docs.pretix.eu/en/latest/api/oauth.html) 
-
-You will need to create a pretix account (can probably be unpriviliged - may need an invite from someone) and [register an Oauth application](https://docs.pretix.eu/en/latest/api/oauth.html#registering-an-application) to get a client ID and secret (the secret may not be fully necessary).
-- for the redirect URL, if you dont know whether you are going to have access to a public facing, https-capable web address, simply enter `https://localhost:8000/`
 
 #### Setting up an event
 
@@ -78,11 +84,14 @@ If this event is being set up for testing, be sure to uncheck the "list publicly
 ![The "list publicly" checkbox on the main settings page of pretix that reads "Show in lists"](./demo/pretix%20public%20checkbox.png)
 
 
-You will also need to configure a custom question to collect participant's Matrix ID. Pretix doesnt seem to have user facing documentation on this, so your best bet is probably to copy the settings from an existing event that had these questions already set up.
+You will also need to **configure a custom question to collect participant's Matrix ID**. Pretix doesnt seem to have user facing documentation on this, so your best bet is probably to copy the settings from an existing event that had these questions already set up.
 
-Here's what you would need to set the values to for the matrix id question (ignore the FAS one - you may need to do additional things to set up questions, im not sure):
+Here's what you would need to set the values to for the matrix id question (ignore the FAS one):
 
 ![the questions menu in pretix showing a configured matrix ID question](./demo/pretix%20questions%20setup.png)
 
-Currently this bot is hardcoded to look for an `internal identifier` value (its under advanced when editing the question) thats set to `matrix`. In the future this may be configurable
+Currently this bot is hardcoded to look for an `internal identifier` value of `matrix`. This can be found under the advanced manu when editing the question. In the future this may be configurable
 
+#### Setting up webhooks
+
+Webhooks are an organization-level setting that requires admin permissions to edit. Pretix has [documentation](https://docs.pretix.eu/en/latest/api/webhooks.html#configuring-webhooks) for how to configure a webhook.
