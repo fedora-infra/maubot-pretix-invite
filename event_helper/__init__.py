@@ -117,6 +117,7 @@ class EventManagement(Plugin):
         organizer = result_dict.get("organizer")
         event = result_dict.get("event")
         attendees = result_dict.get("data")
+        # order may already be processed (because im messing with it), so this may be empty
         order_id = attendees[0].order_code
         matrix_id = attendees[0].matrix_id
 
@@ -251,6 +252,8 @@ class EventManagement(Plugin):
         data = self.pretix.extract_answers(data, filter_processed=True)
 
         failed_invites = await self.invite_attendees(room_id, data)
+        # TODO: mark successful ones as processed
+        
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
