@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.1
+- dont crash when starting up if no pre-saved pretix token is present
+
 ## v0.3.0
 
 - bug fixes and debugging improvements
