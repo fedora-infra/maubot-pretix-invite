@@ -1,7 +1,10 @@
-# maubot-events
-A maubot plugin that helps facilitate Fedora virtual events that are run through Matrix
+# maubot-pretix-invites
 
-The code for this bot was originally based on the [maubot-pagure-notifications](https://github.com/fedora-infra/maubot-pagure-notifications) codebase due its implementation of similar features (i.e. handling webhooks).
+A maubot plugin that automatically invites event participants from pretix into a matrix room. This helps facilitate Fedora virtual events that are run on Matrix.
+
+## History and project Origins
+
+This project began with the use of pretix + Matrix combo from the F40 release party ([ticket](https://gitlab.com/fedora/commops/interns/-/issues/15)) and started a [community operations intern initiative](https://gitlab.com/fedora/commops/interns/-/issues/16) to adapt and automate the process for the Fedora Week of Diversity 2024 ([ticket](https://gitlab.com/fedora/dei/week-of-diversity/-/issues/23))
 
 ## Features
 - Can auth with pretix and fetch event attendees
@@ -9,23 +12,7 @@ The code for this bot was originally based on the [maubot-pagure-notifications](
 - can handle incoming webhooks from pretix for paid-for events and auto-invite those people to the event room(s)
 - can associate matrix rooms with events to (theoretically) invite users to multiple matrix rooms
 
-
-## Dependencies
-Things the bot needs to run:
-- python dependencies from requirements.txt
-- a public facing web address with HTTPS enabled (not fully supported yet but planned) - this is for webhooks and callbacks from pretix
-- Credentials for pretix
-- a pretix event
-
-
-The bot should run on the same infrastructure as the other matrix bots. I'm not quite sure what this infrastructure is though.... 
-
-## Configuration
-
-To configure the bot, modify `base-config.yaml` to add your pretix tokens and the matrix IDs of some authorized users.
-
-
-## Basic Usage
+## Basic Usage and commands
 
 Once the bot is running and in a matrix room, you can interact with it using a few commands:
 
@@ -48,11 +35,19 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 **Association and status**
 ![A screenshot of a matrix conversation showing the usage of the association and status commands](./demo/room%20association%20and%20status.png)
 
-## History and project Origins
-
-This project began with the use of pretix + Matrix combo from the F40 release party ([ticket](https://gitlab.com/fedora/commops/interns/-/issues/15)) and was [adapted to be more automatic](https://gitlab.com/fedora/commops/interns/-/issues/16) for the Fedora Week of Diversity 2024 ([ticket](https://gitlab.com/fedora/dei/week-of-diversity/-/issues/23))
 
 
+## Dependencies
+External things the bot needs to run well:
+- python dependencies from requirements.txt
+- a public facing web address (optionally with HTTPS, this is for webhook calls from pretix)
+- credentials for pretix
+- a pretix event to invite people to
+
+
+## Configuration
+
+To configure the bot, modify `base-config.yaml` to add your pretix tokens and the matrix IDs of some authorized users.
 
 
 ## Development
