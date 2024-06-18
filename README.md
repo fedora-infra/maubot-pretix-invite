@@ -102,6 +102,8 @@ Here's what you would need to set the values to for the matrix id question (igno
 
 Currently this bot is hardcoded to look for an `internal identifier` value of `matrix`. This can be found under the advanced menu when editing the question. In the future this may be configurable.
 
+While you are in the advanced menu, you may also want to add helptext to this question to inform event registrants that you will use this matrix ID to invite them to the event and that it must be specified in the full `@username:domain.tld` matrix username format.
+
 #### Setting up webhooks
 
 Webhooks are an organization-level setting that requires admin permissions to edit. Pretix has [documentation](https://docs.pretix.eu/en/latest/api/webhooks.html#configuring-webhooks) for how to configure a webhook.
