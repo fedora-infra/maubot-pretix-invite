@@ -116,7 +116,7 @@ class EventRoomsDB(EventRooms):
         self.database = database
         self._table_name = tablename
 
-    def rooms_by_event(self, organizer:str, event:str) -> set:
+    async def rooms_by_event(self, organizer:str, event:str) -> set:
         q = f"SELECT room FROM {self._table_name} WHERE organizer=$1 AND event=$2"
         row = await self.database.fetch(q, organizer, event)
         if len(rows) == 0:
@@ -124,17 +124,33 @@ class EventRoomsDB(EventRooms):
         else:
             return set([row["room"] for row in rows])
 
-    def add(self, organizer:str, event:str, room_id:str):
-        raise NotImplementedError()
+    async def add(self, organizer:str, event:str, room_id:str):
+        q = f"""
+            INSERT INTO {self._table_name} (organizer, event, room) VALUES ($1, $2, $3)
+        """
+        # ON CONFLICT (key) DO UPDATE SET value=excluded.value, creator=excluded.creator
+        await self.database.execute(q, organizer, event, room_id)
 
-    def remove(self, organizer:str, event:str, room_id:str):
-        raise NotImplementedError()
+    async def remove(self, organizer:str, event:str, room_id:str):
+        q = f"DROP * FROM {self._table_name} WHERE organizer=$1 AND event=$2 AND room=$3"
+        await self.database.execute(q, organizer, event, room)
 
-    def room_is_mapped(self, room:str) -> bool:
-        raise NotImplementedError()
+    async def room_is_mapped(self, room:str) -> bool:
+        q = f"SELECT COUNT(*) FROM {self._table_name} WHERE room=$1"
+        row = await self.database.fetchrow(q, room)
+        if row:
+            return row[0] > 0
+        else:
+            return False
 
-    def events_for_room(self, room:str) -> List[str]:
-        raise NotImplementedError()
+    async def events_for_room(self, room:str) -> List[str]:
+        q = f"SELECT organizer, event, room FROM {self._table_name} WHERE room=$1"
+        row = await self.database.fetch(q, room)
+        if len(rows) == 0:
+            return []
+        else:
+            return list([f"{row['organizer']}/{row['event']}" for row in rows])
 
-    def purge_room(self, room:str):
-        raise NotImplementedError()
+    async def purge_room(self, room:str):
+        q = f"DROP * FROM {self._table_name} WHERE room=$1"
+        await self.database.execute(q, room)
