@@ -91,6 +91,7 @@ class Pretix:
                 token=self._token.to_dict(),
                 scope=["read"],
                 redirect_uri=redirect_uri,
+                auto_refresh_kwargs=self._get_token_refresh_auth_headers,
                 auto_refresh_url=self.token_url,
                 token_updater=self._update_token #auto_refresh_kwargs=extra,
             )
@@ -161,6 +162,11 @@ class Pretix:
         return self.base_url + "/me"
 
         # TODO: test auth with organizer and event
+
+    @property
+    def _get_token_refresh_auth_headers(self):
+        token_refresh_auth_token = b64encode(bytes(f"{self._client_id}:{self._client_secret}","utf-8"))
+        return {"Authorization": f"Basic {token_refresh_auth_token}"}
 
     def _update_token(self, token:dict):
         """in-memory token storage
@@ -242,13 +248,12 @@ class Pretix:
 
         # if not state:
             # something went wrong
-        token_refresh_auth_token = b64encode(bytes(f"{self._client_id}:{self._client_secret}","utf-8"))
         self.oauth = OAuth2Session(
             self._client_id,
             state=querystring.get("state")[0],
             # token=token,
             auto_refresh_url=self.token_url,
-            auto_refresh_kwargs={"Authorization": f"Basic {token_refresh_auth_token}"},
+            auto_refresh_kwargs=self._get_token_refresh_auth_headers,
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
         token = self.oauth.fetch_token(
             self.token_url,
