@@ -218,7 +218,7 @@ class EventManagement(Plugin):
             self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
             # validate matrix id
             try:
-                validated_id = validate_matrix_id(matrix_id)
+                validated_id = validate_matrix_id(matrix_id, fix_at_sign=True)
             except ValueError as e:
                 self.log.debug(f"matrix ID was invalid for the following reason: {e}")
                 invalid_users.append(matrix_attendee)

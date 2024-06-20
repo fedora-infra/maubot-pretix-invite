@@ -29,7 +29,7 @@ UserInfoMap = Mapping[str, UserInfo]
 
 
 
-def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False) -> str:
+def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False, enforce_at_sign=True) -> str:
     """check to ensure a given matrix id is formatted in a valid way
 
     this refers heavily to the rules given for matrix ids in https://spec.matrix.org/v1.10/appendices/#user-identifiers
