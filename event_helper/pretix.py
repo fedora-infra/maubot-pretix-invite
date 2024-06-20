@@ -91,9 +91,8 @@ class Pretix:
                 token=self._token.to_dict(),
                 scope=["read"],
                 redirect_uri=redirect_uri,
-                auto_refresh_kwargs=self._get_token_refresh_auth_headers,
                 auto_refresh_url=self.token_url,
-                token_updater=self._update_token #auto_refresh_kwargs=extra,
+                token_updater=self._update_token
             )
         else:
             self.oauth = OAuth2Session(
@@ -129,7 +128,7 @@ class Pretix:
         # test the auth
         if not self.has_token:
             return False, None
-        r = self.oauth.get(self.test_url)
+        r = self.oauth.get(self.test_url, client_id=self._client_id, client_secret=self._client_secret)
         if r.status_code >= 200 and r.status_code < 300:
             return True, None
         else:
@@ -162,11 +161,6 @@ class Pretix:
         return self.base_url + "/me"
 
         # TODO: test auth with organizer and event
-
-    @property
-    def _get_token_refresh_auth_headers(self):
-        token_refresh_auth_token = b64encode(bytes(f"{self._client_id}:{self._client_secret}","utf-8"))
-        return {"headers": {"Authorization": f"Basic {token_refresh_auth_token}"}}
 
     def _update_token(self, token:dict):
         """in-memory token storage
@@ -253,8 +247,8 @@ class Pretix:
             state=querystring.get("state")[0],
             # token=token,
             auto_refresh_url=self.token_url,
-            auto_refresh_kwargs=self._get_token_refresh_auth_headers,
-            token_updater=self._update_token)#auto_refresh_kwargs=extra,
+            token_updater=self._update_token
+        )
         token = self.oauth.fetch_token(
             self.token_url,
             authorization_response=authorization_response,
@@ -309,14 +303,14 @@ class Pretix:
         if order_code is None:
             # many orders are being requested.
             while url:
-                response = self.oauth.get(url)
+                response = self.oauth.get(url, client_id=self._client_id, client_secret=self._client_secret)
                 response.raise_for_status()
                 json_response = response.json()
                 data.extend(json_response.get('results', []))
                 url = json_response.get('next')
         else:
             # one order is requested
-            response = self.oauth.get(url)
+            response = self.oauth.get(url, client_id=self._client_id, client_secret=self._client_secret)
             response.raise_for_status()
             json_response = response.json()
             data.append(json_response)
