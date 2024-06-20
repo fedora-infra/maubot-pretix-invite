@@ -343,7 +343,7 @@ class EventManagement(Plugin):
         if auth_url is not None and auth_url != "":
             self.pretix.set_token_from_auth_callback(auth_url)
         
-        if not self.pretix.has_token:
+        if not self.pretix.test_auth()[0]:
             auth_url = self.pretix.get_auth_url()
             # inform user to visit the url and run the !token command with the response
             await evt.reply(f"Please visit {auth_url} and re-run the `!authorize` command again with the URL you are redirected to in order to authorize.")
