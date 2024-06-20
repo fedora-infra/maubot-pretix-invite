@@ -125,7 +125,7 @@ class Pretix:
 
     def test_auth(self):
         # test the auth
-        if not self.is_authorized:
+        if not self.has_token:
             return False, None
         r = self.oauth.get(self.test_url)
         if r.status_code >= 200 and r.status_code < 300:
@@ -134,7 +134,7 @@ class Pretix:
             return False, r
 
     @property
-    def is_authorized(self):
+    def has_token(self):
         return self.oauth.authorized
         # TODO: test auth with organizer and event
 

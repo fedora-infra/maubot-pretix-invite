@@ -243,7 +243,7 @@ class EventManagement(Plugin):
 
         room_id = evt.room_id
 
-        if not self.pretix.is_authorized:
+        if not self.pretix.has_token:
             await evt.reply(f"Error when testing authentication. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
             return
         
@@ -326,7 +326,7 @@ class EventManagement(Plugin):
 
     #     self.pretix.set_token_manually(token_str)
 
-    #     if self.pretix.is_authorized:
+    #     if self.pretix.has_token:
     #         await evt.reply(f"Authorization successful")
     #     else:
     #         await evt.reply(f"Smth happened")
@@ -343,7 +343,7 @@ class EventManagement(Plugin):
         if auth_url is not None and auth_url != "":
             self.pretix.set_token_from_auth_callback(auth_url)
         
-        if not self.pretix.is_authorized:
+        if not self.pretix.has_token:
             auth_url = self.pretix.get_auth_url()
             # inform user to visit the url and run the !token command with the response
             await evt.reply(f"Please visit {auth_url} and re-run the `!authorize` command again with the URL you are redirected to in order to authorize.")
