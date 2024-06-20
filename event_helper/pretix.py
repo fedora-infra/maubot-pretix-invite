@@ -257,22 +257,6 @@ class Pretix:
         self._update_token(token)
         return
 
-    def set_token_manually(self, token):
-        """complete the auth process by using a manually fetched token
-
-        Args:
-            token (dict or string): the token to use
-        """
-        if isinstance(token, str):
-            token = json.loads(token)
-
-        self.oauth = OAuth2Session(
-            self._client_id,
-            token=token,
-            auto_refresh_url=self.token_url,
-            token_updater=self._update_token)#auto_refresh_kwargs=extra,
-        self._update_token(token)
-        return
 
     def revoke_access_token(self):
         """attempt to revoke the access token if it is suspected to have bene compromized or is no longer needed
