@@ -166,7 +166,7 @@ class Pretix:
     @property
     def _get_token_refresh_auth_headers(self):
         token_refresh_auth_token = b64encode(bytes(f"{self._client_id}:{self._client_secret}","utf-8"))
-        return {"Authorization": f"Basic {token_refresh_auth_token}"}
+        return {"headers": {"Authorization": f"Basic {token_refresh_auth_token}"}}
 
     def _update_token(self, token:dict):
         """in-memory token storage
