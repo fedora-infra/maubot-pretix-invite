@@ -345,20 +345,8 @@ class Pretix:
             self._processed_rows = list(set(self._processed_rows).union(set(processed_order_ids)))
 
 
-    def write_to_csv(self, entries: CSVData, file_name: str, display: bool = False) -> None:  # noqa: E501
-        fieldnames = entries[0].keys()
-        with open(file_name, mode='w+', newline='') as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-            writer.writeheader()
-            for entry in entries:
-                writer.writerow(entry)
 
-            if not display:
-                return
 
-            csv_file.flush()
-            csv_file.seek(0)
-            print(csv_file.read())
 
     def filter_dict(self, old_dict: dict, your_keys: list[str]) -> dict:
         """filters a dictionary so it only contains the specified keys
@@ -367,30 +355,12 @@ class Pretix:
         return { your_key: old_dict[your_key] for your_key in your_keys }
 
     
-    def csv_to_data(self, csv_file:str) -> CSVData:
-        """_summary_
 
-        Args:
-            csv_file (str): the input filename to process
 
-        Returns:
-            CSVData: the csv data in dict format for further processing
-        """
         
-        with open(csv_file) as csvfile:
-            reader = csv.DictReader(csvfile)
-            return list(reader)
 
-    def filter_csv_columns(self, csv_data:CSVData, filter_keys=["Order code", "Email", "Order date", "Order time", "Pseudonymization ID", "Fedora Account Services (FAS)", "Matrix ID", "Invoice address name"]) -> CSVData:
-        """Takes in a CSV data (dict-formatted) and returns dict-formatted data with unused columns removed
 
-        Args:
-            csv_data (CSVData): the input csv data to process
 
-        Returns:
-            CSVData: the data with unused columns removed
-        """
-        return [filter_dict(d, filter_keys) for d in csv_data]
     
 
     def _filter_processed_data(self, data:List[AttendeeMatrixInformation], processed_ids:List[str]) -> List[AttendeeMatrixInformation]:
