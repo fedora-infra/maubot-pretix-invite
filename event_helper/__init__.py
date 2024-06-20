@@ -17,6 +17,7 @@ from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
+NL = "      \n"
 
 class Config(BaseProxyConfig):
     def do_update(self, helper: ConfigUpdateHelper):
@@ -184,7 +185,7 @@ class EventManagement(Plugin):
                 output.append(
                     f"* `{cmd.__mb_prefix__} {cmd.__mb_usage_args__}` - {cmd.__mb_help__}"
                 )
-        await evt.respond("      \n".join(output))
+        await evt.respond(NL.join(output))
 
 
     @command.new(help="return information about this bot")

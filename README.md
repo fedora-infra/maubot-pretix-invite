@@ -28,6 +28,8 @@ Once the bot is running and in a matrix room, you can interact with it using a f
 
 `!unsetroom` this command will remove this room from all events it is currently associated with
 
+Other commands (or more up to date usage information for the above commands) is also available through the `!help` command.
+
 ### Examples
 **Authorization and batch invite**
 ![A screenshot of a matrix conversation showing the usage of the authorization and batch invite commands](./demo/matrix%20auth%20and%20batch%20invite.png)
