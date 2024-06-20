@@ -282,7 +282,7 @@ class Pretix:
 
         data = []
 
-        if order_code is None:
+        if order_code == "":
             # many orders are being requested.
             while url:
                 response = self.oauth.get(url, client_id=self._client_id, client_secret=self._client_secret)
