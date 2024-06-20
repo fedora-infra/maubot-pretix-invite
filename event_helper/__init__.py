@@ -184,7 +184,7 @@ class EventManagement(Plugin):
                 output.append(
                     f"* `{cmd.__mb_prefix__} {cmd.__mb_usage_args__}` - {cmd.__mb_help__}"
                 )
-        await evt.respond(NL.join(output))
+        await evt.respond("      \n".join(output))
 
 
     @command.new(help="return information about this bot")
