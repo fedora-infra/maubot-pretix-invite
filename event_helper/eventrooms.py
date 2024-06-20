@@ -1,8 +1,6 @@
-from dataclasses import dataclass, field
 
-@dataclass
 class EventRooms:
-    _mapping: dict = field(default_factory=lambda: {})
+    _mapping: dict = {}
 
     def rooms_by_event(self, organizer:str, event:str):
         if self._mapping.get(organizer) is None:
