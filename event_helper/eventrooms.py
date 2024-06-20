@@ -2,6 +2,8 @@ from typing import List
 
 
 class EventRooms:
+    # TODO: update room function for handling tombstoned rooms and migrating them.
+    # check that new room is not present in the db and then replace all uses of the old room with it
 
     def rooms_by_event(self, organizer:str, event:str) -> set:
         """return the set the rooms mapped to a given event
