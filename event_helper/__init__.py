@@ -288,7 +288,7 @@ class EventManagement(Plugin):
         await evt.reply("room associated successfully")
 
     
-    @command.new(name="unsetroom", help="de-associate the current matrix room with a specified pretix event")
+    @command.new(name="unsetroom", help="de-associate the current matrix room with a specified pretix event or remove this room from all events")
     @command.argument("pretix_url", pass_raw=True, required=False)
     async def unsetroom(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
