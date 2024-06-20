@@ -108,3 +108,28 @@ class EventRoomsMemory(EventRooms):
             for event in self._mapping[organizer]:
                 if room in event:
                     self._mapping[organizer][event].remove(room)
+
+
+class EventRoomsDB(EventRooms):
+
+    def __init__(self, database, tablename="event_rooms"):
+        self.database = database
+        self._table_name = tablename
+
+    def rooms_by_event(self, organizer:str, event:str) -> set:
+        raise NotImplementedError()
+
+    def add(self, organizer:str, event:str, room_id:str):
+        raise NotImplementedError()
+
+    def remove(self, organizer:str, event:str, room_id:str):
+        raise NotImplementedError()
+
+    def room_is_mapped(self, room:str) -> bool:
+        raise NotImplementedError()
+
+    def events_for_room(self, room:str) -> List[str]:
+        raise NotImplementedError()
+
+    def purge_room(self, room:str):
+        raise NotImplementedError()
