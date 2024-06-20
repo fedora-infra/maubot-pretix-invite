@@ -6,6 +6,7 @@ from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
 from mautrix.util.logging import TraceLogger
 from pathlib import Path
+from base64 import b64encode
 
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
@@ -241,11 +242,13 @@ class Pretix:
 
         # if not state:
             # something went wrong
+        token_refresh_auth_token = b64encode(bytes(f"{self._client_id}:{self._client_secret}","utf-8"))
         self.oauth = OAuth2Session(
             self._client_id,
             state=querystring.get("state")[0],
             # token=token,
             auto_refresh_url=self.token_url,
+            auto_refresh_kwargs={"Authorization": f"Basic {token_refresh_auth_token}"},
             token_updater=self._update_token)#auto_refresh_kwargs=extra,
         token = self.oauth.fetch_token(
             self.token_url,
