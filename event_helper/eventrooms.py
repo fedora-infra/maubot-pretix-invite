@@ -117,7 +117,12 @@ class EventRoomsDB(EventRooms):
         self._table_name = tablename
 
     def rooms_by_event(self, organizer:str, event:str) -> set:
-        raise NotImplementedError()
+        q = f"SELECT room FROM {self._table_name} WHERE organizer=$1 AND event=$2"
+        row = await self.database.fetch(q, organizer, event)
+        if len(rows) == 0:
+            return set()
+        else:
+            return set([row["room"] for row in rows])
 
     def add(self, organizer:str, event:str, room_id:str):
         raise NotImplementedError()
