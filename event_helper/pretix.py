@@ -53,30 +53,18 @@ class AttendeeMatrixInformation:
 
 class Pretix:
 
-    def __init__(self, client_id, client_secret, redirect_uri, log:TraceLogger, token_storage_filename="pretix-token.json", instance_url="https://pretix.eu"):
+    def __init__(self, client_id, client_secret, redirect_uri, log:TraceLogger, instance_url="https://pretix.eu"):
         self._instance_url = instance_url
         self._client_secret = client_secret
         self._processed_rows = []
         self._client_id = client_id
         self.logger = log
+        # TODO: optional external token persistence and retrieval function(s)
 
-        # if in container
-        maubot_base_location = Path("/data")
-        if not maubot_base_location.exists():
-            # Fedora dev environment
-            maubot_base_location = Path("/var/lib/maubot/")
-        
-        if not maubot_base_location.exists():
-            # homedir
-            maubot_base_location = Path("~")
-
-        self.token_storage_file = maubot_base_location / token_storage_filename
-
-        # if token storage file exists, save it
-        if self.token_storage_file.exists():
-            data = self.token_storage_file.read_text()
-            self._token = Token.from_json(json.loads(data))
-            self.logger.debug("token loaded from file")
+        maybe_token = self._get_token(token_storage_filename="pretix-token.json")
+        # if a token was stored externally, save it in memory
+        if maybe_token is not None:
+            self._token = maybe_token
 
         # most providers will ask you for extra credentials to be passed along
         # when refreshing tokens, usually for authentication purposes.
@@ -159,6 +147,27 @@ class Pretix:
         return self.base_url + "/me"
 
         # TODO: test auth with organizer and event
+
+    def _get_token(self, token_storage_filename="pretix-token.json"):
+        # if in container
+        maubot_base_location = Path("/data")
+        if not maubot_base_location.exists():
+            # Fedora dev environment
+            maubot_base_location = Path("/var/lib/maubot/")
+        
+        if not maubot_base_location.exists():
+            # homedir
+            maubot_base_location = Path("~")
+
+        self.token_storage_file = maubot_base_location / token_storage_filename
+
+        # if token storage file exists, save it
+        if self.token_storage_file.exists():
+            data = self.token_storage_file.read_text()
+            self.logger.debug("token loaded from file")
+            return Token.from_json(json.loads(data))
+        return None
+
 
     def _update_token(self, token:dict):
         """in-memory token storage
