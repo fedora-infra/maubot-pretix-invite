@@ -359,7 +359,8 @@ class EventManagement(Plugin):
             return
         
         room_id = evt.room_id
-        pretix_auth_status = "authorized" if self.pretix.is_authorized else "not authorized"
+        test_result, details = self.pretix.test_auth()
+        pretix_auth_status = "authorized" if test_result else "not authorized"
         room_associated = "is" if self.room_mapping.room_is_mapped(room_id) else "is not"
 
         await evt.reply(f"""

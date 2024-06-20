@@ -125,8 +125,13 @@ class Pretix:
 
     def test_auth(self):
         # test the auth
+        if not self.is_authorized:
+            return False, None
         r = self.oauth.get(self.test_url)
-        r.raise_for_status()
+        if r.status_code >= 200 and r.status_code < 300:
+            return True, None
+        else:
+            return False, r
 
     @property
     def is_authorized(self):
