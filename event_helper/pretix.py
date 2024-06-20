@@ -100,8 +100,7 @@ class Pretix:
                 scope=["read"],
                 redirect_uri=redirect_uri
             )
-            
-            
+
     
     @staticmethod
     def parse_invite_url(pretix_url):
@@ -138,7 +137,6 @@ class Pretix:
     def has_token(self):
         return self.oauth.authorized
         # TODO: test auth with organizer and event
-
         
     @property
     def _has_token(self):
@@ -345,23 +343,12 @@ class Pretix:
             self._processed_rows = list(set(self._processed_rows).union(set(processed_order_ids)))
 
 
-
-
-
     def filter_dict(self, old_dict: dict, your_keys: list[str]) -> dict:
         """filters a dictionary so it only contains the specified keys
         accomplishes this by constructing a new dictionary
         """
         return { your_key: old_dict[your_key] for your_key in your_keys }
 
-    
-
-
-        
-
-
-
-    
 
     def _filter_processed_data(self, data:List[AttendeeMatrixInformation], processed_ids:List[str]) -> List[AttendeeMatrixInformation]:
         """filters attendee information to remove data thats already been processed
