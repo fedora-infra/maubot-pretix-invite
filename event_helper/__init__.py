@@ -10,11 +10,12 @@ from maubot.handlers import command
 from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
-
+from mautrix.util.async_db import Connection
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
 from .eventrooms import EventRooms
+from .database import upgrade_table
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 NL = "      \n"
@@ -50,6 +51,10 @@ class EventManagement(Plugin):
         self.webapp.add_route("POST", "/notify", self.handle_request)
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
         print(self.webapp_url)
+
+    @classmethod
+    def get_db_upgrade_table(cls) -> UpgradeTable | None:
+        return upgrade_table
 
     def _get_handler_commands(self):
         for cmd, _ignore in chain(*self.client.event_handlers.values()):
