@@ -6,6 +6,7 @@ from functools import reduce
 from oauthlib.oauth2 import BackendApplicationClient
 from mautrix.util.logging import TraceLogger
 from pathlib import Path
+from base64 import b64encode
 
 from requests_oauthlib import OAuth2Session
 from .auth import Token 
@@ -91,7 +92,7 @@ class Pretix:
                 scope=["read"],
                 redirect_uri=redirect_uri,
                 auto_refresh_url=self.token_url,
-                token_updater=self._update_token #auto_refresh_kwargs=extra,
+                token_updater=self._update_token
             )
         else:
             self.oauth = OAuth2Session(
@@ -125,11 +126,16 @@ class Pretix:
 
     def test_auth(self):
         # test the auth
-        r = self.oauth.get(self.test_url)
-        r.raise_for_status()
+        if not self.has_token:
+            return False, None
+        r = self.oauth.get(self.test_url, client_id=self._client_id, client_secret=self._client_secret)
+        if r.status_code >= 200 and r.status_code < 300:
+            return True, None
+        else:
+            return False, r
 
     @property
-    def is_authorized(self):
+    def has_token(self):
         return self.oauth.authorized
         # TODO: test auth with organizer and event
 
@@ -241,7 +247,8 @@ class Pretix:
             state=querystring.get("state")[0],
             # token=token,
             auto_refresh_url=self.token_url,
-            token_updater=self._update_token)#auto_refresh_kwargs=extra,
+            token_updater=self._update_token
+        )
         token = self.oauth.fetch_token(
             self.token_url,
             authorization_response=authorization_response,
@@ -296,14 +303,14 @@ class Pretix:
         if order_code is None:
             # many orders are being requested.
             while url:
-                response = self.oauth.get(url)
+                response = self.oauth.get(url, client_id=self._client_id, client_secret=self._client_secret)
                 response.raise_for_status()
                 json_response = response.json()
                 data.extend(json_response.get('results', []))
                 url = json_response.get('next')
         else:
             # one order is requested
-            response = self.oauth.get(url)
+            response = self.oauth.get(url, client_id=self._client_id, client_secret=self._client_secret)
             response.raise_for_status()
             json_response = response.json()
             data.append(json_response)
