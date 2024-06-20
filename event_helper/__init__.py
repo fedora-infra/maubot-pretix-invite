@@ -103,6 +103,15 @@ class EventManagement(Plugin):
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
         print(self.webapp_url)
 
+    def _get_handler_commands(self):
+        for cmd, _ignore in chain(*self.client.event_handlers.values()):
+            if not isinstance(cmd, command.CommandHandler):
+                continue
+            func_mod = cmd.__mb_func__.__module__
+            if func_mod != __name__ and not func_mod.startswith(f"{__name__}."):
+                continue  # pragma: no cover
+            yield cmd
+
     async def handle_request(self, request):
         json = await request.json()
         
