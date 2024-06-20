@@ -14,7 +14,7 @@ from mautrix.util.async_db import Connection
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
-from .eventrooms import EventRooms
+from .eventrooms import EventRoomsMemory
 from .database import upgrade_table
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
@@ -39,7 +39,7 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
-        self.room_mapping = EventRooms()
+        self.room_mapping = EventRoomsMemory()
         self.pretix = Pretix(
             self.config["pretix_client_id"],
             self.config["pretix_client_secret"],
