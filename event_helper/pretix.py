@@ -53,7 +53,7 @@ class AttendeeMatrixInformation:
 
 class Pretix:
 
-    def __init__(self, instance_url, client_id, client_secret, redirect_uri, log:TraceLogger, token_storage_filename="pretix-token.json"):
+    def __init__(self, client_id, client_secret, redirect_uri, log:TraceLogger, token_storage_filename="pretix-token.json", instance_url="https://pretix.eu"):
         self._instance_url = instance_url
         self._client_secret = client_secret
         self._processed_rows = []

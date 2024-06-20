@@ -94,11 +94,11 @@ class EventManagement(Plugin):
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
         self.room_mapping = EventRooms()
         self.pretix = Pretix(
-            self.config["pretix_instance_url"],
             self.config["pretix_client_id"],
             self.config["pretix_client_secret"],
             self.config["pretix_redirect_url"],
-            self.log
+            self.log,
+            instance_url=self.config["pretix_instance_url"],
         )
 
         self.webapp.add_route("POST", "/notify", self.handle_request)
