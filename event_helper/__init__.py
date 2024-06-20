@@ -1,4 +1,5 @@
 import hashlib
+from itertools import chain
 import hmac
 from typing import List
 from dataclasses import dataclass, field
