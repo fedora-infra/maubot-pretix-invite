@@ -1,0 +1,20 @@
+[allowlist]
+regexTarget = "match"
+# These are likely to be secrets for essentially registration confirmation links and
+# were included in unit tests in a copy paste of a realistic server response for JSON parsing purposes.
+# Their values are not needed or used by this project.
+# ("secret: The secret contained in the link sent to the customer") and ticket validations
+# ("secret: Secret code printed on the tickets for validation")
+# They almost certainly do not have the scope to change anything other than the
+# individual event registrations they were created for in the first place.
+# They were also made against a test event that has now been cancelled, so these secrets
+# should be no longer usable.
+# Quotes are from https://docs.pretix.eu/en/latest/api/resources/orders.html#orders.
+# Check with the maintainers of the pretix.eu platform for a more detailed or precise
+# security analysis of these values:
+# - https://github.com/pretix/pretix/
+# - https://pretix.eu/about/en/security
+regexes = [
+   "vpn4nquljppovsb2",
+   "a2v8re7fsxxmv2za7mnbnfkqejaapaft"
+]
