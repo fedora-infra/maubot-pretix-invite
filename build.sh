@@ -2,7 +2,7 @@
 
 # Run a maubot build to package this plugin into a .mbc file for upload to a maubot server
 
-image="dock.mau.dev/maubot/maubot"
+image="maubot-eventbot-environment"
 cmd="mbc build"
 
 if uname | grep -iwq darwin; then
@@ -12,6 +12,7 @@ if uname | grep -iwq darwin; then
     echo ""
     echo "This build script is using Docker container runtime to run the build in an isolated environment."
     echo ""
+    docker build -t "${image}" .
     docker run --rm -it -v "$(pwd):/maubot-events" "${image}" ${cmd}
 
 elif uname | grep -iq linux; then
@@ -30,6 +31,7 @@ elif uname | grep -iq linux; then
         echo ""
         echo "This build script is using Podman to run the build in an isolated environment."
         echo ""
+        podman build -t "${image}" .
         podman run --rm -it -v "$(pwd):/maubot-events:z" "${image}" ${cmd}
 
     elif [ -f /usr/bin/docker ]; then
@@ -38,6 +40,7 @@ elif uname | grep -iq linux; then
         echo ""
 
         if groups | grep -wq "docker"; then
+            docker build -t "${image}" .
             docker run --rm -it -v "$(pwd):/maubot-events:z" "${image}" ${cmd}
         else
             echo "You might be asked for your password."
@@ -45,6 +48,7 @@ elif uname | grep -iq linux; then
             echo "but be aware of the security implications."
             echo "See https://docs.docker.com/install/linux/linux-postinstall/"
             echo ""
+            docker build -t "${image}" .
             sudo docker run --rm -it -v "$(pwd):/maubot-events:z" "${image}" ${cmd}
         fi
     else
