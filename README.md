@@ -59,17 +59,21 @@ External things the bot needs to run well:
 If you would simply like to get this bot running and start using it, follow these steps. 
 
 1. [Ensure your pretix event is set up](#setting-up-an-event)
-2. Using your pretix account, [register an Oauth application](https://pretix.eu/control/settings/oauth/apps/) ([docs](https://docs.pretix.eu/en/latest/api/oauth.html#registering-an-application)) to get a pretix Client ID and Client Secret.
-3. Build the bot container (this is a standard maubot container with the bot's python dependencies installed). This can be done with `docker build -t maubot-custom .`
-4. Run the bot's container per the [standard maubot container setup](https://docs.mau.fi/maubot/usage/setup/docker.html).
-    - Be sure to set up your matrix homeserver and an admin username and password in your `config.yaml` as you'll need these later
+2. Using your pretix account, [register an Oauth application](https://pretix.eu/control/settings/oauth/apps/) ([docs](https://docs.pretix.eu/en/latest/api/oauth.html#registering-an-application)) to get a pretix Client ID and Client Secret, these will be needed later.
+3. Build the container from this repo with `docker build -t maubot-custom .`. This is a standard maubot container with the bot's python dependencies installed.
+4. Follow the [standard maubot container setup](https://docs.mau.fi/maubot/usage/setup/docker.html) to run maubot using this new custom container image instead of the official one. Dont forget to set up the following things during the process:
+    - Create yourself an admin username and password in the `config.yaml` to use for logging into the web interface
+    - Tell maubot about your matrix homeserver's domain (for fedora this is likely `fedora.ems.host`)
     - If you plan to use the webhooks feature to auto-invite attendees as they register, ensure the domain you plan to use is also configured in `config.yaml`
-5. From an environment containing maubot (such as a pipenv environment with `maubot` and the other dependencies from requirements.txt installed), open this repository run `mbc build` to build the plugin and save it to a `.mbp` compressed file in the current directory
-6. Login to maubot via the web interface upload the plugin. Configure the client instance for your bot using the homeserver you configured earlier, as well as your [access token](https://webapps.stackexchange.com/a/138497) and device ID for your account on this server
-7. Create a new instance of your bot, selecting your client as the "primary user" and the uploaded plugin for the "type".
-8. Edit the configuration options in the box on the instance page to add your pretix secrets and the matrix IDs of the users you want to be authorized to use the bot.
+5. Run the `./build.sh` script to build this plugin into a `.mbc` package for loading into maubot later. 
+6. Login to maubot via the web interface (see maubot docs on how to do this [here](https://docs.mau.fi/maubot/usage/basic.html)).
+7. Upload the `.mbc` plugin package package that you created earlier to the plugins portion of the maubot interface ([docs](https://docs.mau.fi/maubot/usage/basic.html#uploading-plugins)) 
+8. Create and configure a client for your bot to use ([docs](https://docs.mau.fi/maubot/usage/basic.html#creating-clients)). This is where you will refer to the homeserver you configured earlier when setting up maubot, as well as the [access token](https://webapps.stackexchange.com/a/138497) and device ID for your matrix account on this homeserver
+   - if you forgot to put the homeserver in the config, you may also be able to specify the full URL in the homeserver box as well.
+9.  Create a new instance of your bot ([docs](https://docs.mau.fi/maubot/usage/basic.html#creating-instances)), selecting your client as the "primary user" and the uploaded plugin for the "type".
+10. Edit the configuration options in the box on the instance page to add your pretix secrets and the matrix IDs of the users you want to be authorized to use the bot.
     - for the redirect URL, simply enter `https://localhost:8000/` - in the future this may support reusing the same public facing web domain thats used by the incoming webhook endpoint
-9. Start the bot
+11. Start the bot
 
 **If you want to use the webhooks feature of the bot**
 
