@@ -47,11 +47,10 @@ Other commands (or more up to date usage information for the above commands) is 
 
 ## Dependencies
 External things the bot needs to run well:
-- python dependencies from requirements.txt
-- a public facing web address (optionally with HTTPS, this is for webhook calls from pretix).
-- credentials for pretix
-- a pretix event to invite people to (and therefore a pretix account)
-- a matrix homeserver to connect to with the [credentials](https://webapps.stackexchange.com/a/138497) for an account on this homeserver
+- (If using the webhook/automatic invite feature) a public facing web address, optionally with HTTPS.
+- Access to a pretix account
+- A pretix event that your pretix account can manage
+- A matrix homeserver that is willing to create an account for your bot
 
 
 ## Basic Setup
