@@ -2,7 +2,7 @@
 
 # Run a maubot build to package this plugin into a .mbc file for upload to a maubot server
 
-image="maubot-eventbot-environment"
+image="maubot-eventbot-build-environment"
 cmd="mbc build"
 
 if uname | grep -iwq darwin; then
