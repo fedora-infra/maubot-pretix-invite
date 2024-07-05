@@ -12,7 +12,7 @@ if uname | grep -iwq darwin; then
     echo ""
     echo "This build script is using Docker container runtime to run the build in an isolated environment."
     echo ""
-    docker build -t "${image}" .
+    docker build -t "${image}" -f build.Dockerfile .
     docker run --rm -it -v "$(pwd):/maubot-events" "${image}" ${cmd}
 
 elif uname | grep -iq linux; then
@@ -31,7 +31,7 @@ elif uname | grep -iq linux; then
         echo ""
         echo "This build script is using Podman to run the build in an isolated environment."
         echo ""
-        podman build -t "${image}" .
+        podman build -t "${image}" -f build.Dockerfile .
         podman run --rm -it -v "$(pwd):/maubot-events:z" "${image}" ${cmd}
 
     elif [ -f /usr/bin/docker ]; then
@@ -40,7 +40,7 @@ elif uname | grep -iq linux; then
         echo ""
 
         if groups | grep -wq "docker"; then
-            docker build -t "${image}" .
+            docker build -t "${image}" -f build.Dockerfile .
             docker run --rm -it -v "$(pwd):/maubot-events:z" "${image}" ${cmd}
         else
             echo "You might be asked for your password."
@@ -48,7 +48,7 @@ elif uname | grep -iq linux; then
             echo "but be aware of the security implications."
             echo "See https://docs.docker.com/install/linux/linux-postinstall/"
             echo ""
-            docker build -t "${image}" .
+            docker build -t "${image}" -f build.Dockerfile .
             sudo docker run --rm -it -v "$(pwd):/maubot-events:z" "${image}" ${cmd}
         fi
     else
