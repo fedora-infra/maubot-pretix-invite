@@ -30,6 +30,21 @@ class Config(BaseProxyConfig):
 @dataclass(frozen=True)
 class Room:
     matrix_id: str
+    condition: field(default= {"item": None, "variant": None})
+
+    def matches(self, item, variant):
+        target_item = self.condition.get("item")
+        target_variant = self.condition.get("variant")
+
+        if target_item is None and target_variant is None:
+            return True
+        elif target_item == item and target_variant is None:
+            return True
+        elif target_item == item and target_variant == variant:
+            return True
+        else:
+            return False
+
 @dataclass
 class EventRooms:
     _mapping: dict = field(default_factory=lambda: {})
