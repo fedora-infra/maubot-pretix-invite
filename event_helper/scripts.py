@@ -6,6 +6,7 @@ import argparse
 from dotenv import load_dotenv
 from logging import Logger
 import os 
+import sys
 log = Logger("pretix-scripts")
 
 
@@ -24,18 +25,29 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description='Pretix helper scripts')
-    # parser.add_argument('--csvfile', type=str, help='csv filename downloaded from pretix')
+    parser.add_argument('--auth', type=str, help='the url returned from an auth call')
+
     args = parser.parse_args()
 
-    pretix = Pretix(
+    pretix_ins = Pretix(
         client_id,
         client_secret,
         client_redirect,
         log,
         instance_url=client_apiurl,
     )
+    if not pretix_ins.has_token:
 
-    print(pretix.get_auth_url())
+        if args.auth :
+
+            pretix_ins.set_token_from_auth_callback(args.auth)
+        else:
+            print(pretix_ins.get_auth_url())
+            sys.exit()
+            
+
+    
+    print(pretix_ins.fetch_data(organizer, event, order_code="T03JJ"))
 
 
     # prompt for user input to return callback token
