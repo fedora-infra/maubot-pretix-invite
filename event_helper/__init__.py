@@ -93,11 +93,26 @@ class EventManagement(Plugin):
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
         self.room_mapping = EventRooms()
+
+        # if in container
+        maubot_base_location = Path("/data")
+        if not maubot_base_location.exists():
+            # Fedora dev environment
+            maubot_base_location = Path("/var/lib/maubot/")
+        
+        # if it still doesnt exist
+        if not maubot_base_location.exists():
+            # fall back to the default supplied by pretix class (current directory)
+            maubot_base_location = None
+
+
+
         self.pretix = Pretix(
             self.config["pretix_client_id"],
             self.config["pretix_client_secret"],
             self.config["pretix_redirect_url"],
             self.log,
+            token_storage_path=maubot_base_location,
             instance_url=self.config["pretix_instance_url"],
         )
 
