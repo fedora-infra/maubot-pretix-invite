@@ -57,6 +57,13 @@ class EventRooms:
             return set()
         
         return self._mapping[organizer].get(event)
+
+    def rooms_by_ticket_variant(self, organizer:str, event:str, item_id:str, variant_id:str):
+        event_rooms = self.rooms_by_event(organizer, event)
+
+        rooms_matching_filter = filter(lambda r: r.matches(item_id, variant_id), event_rooms)
+
+        return list(rooms_matching_filter)
     
     def add(self, organizer:str, event:str, room_id:str):
         self.add_object(organizer, event, Room(room_id))
@@ -168,8 +175,12 @@ class EventManagement(Plugin):
         # order may already be processed (because im messing with it), so this may be empty
         order_id = attendees[0].order_code
         matrix_id = attendees[0].matrix_id
+        order = self.pretix.fetch_orders(organizer, event, order_code=order_id)
+        position = order[0].get("positions")[0]
+        item_id = position.get("item")
+        variant_id = position.get("variation")
 
-        room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
+        room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)]
         
         if len(room_ids) == 0:
             self.log.debug(f"found no configured rooms for event {event} from organizer {organizer}."
@@ -307,7 +318,9 @@ class EventManagement(Plugin):
 
     @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
     @command.argument("pretix_url", pass_raw=True, required=True)
-    async def setroom(self, evt: MessageEvent, pretix_url: str) -> None:
+    @command.argument("item_id", pass_raw=True, required=False)
+    @command.argument("variant_id", pass_raw=True, required=False)
+    async def setroom(self, evt: MessageEvent, pretix_url: str, item_id:str, variant_id:str) -> None:
         # permission check
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
@@ -322,7 +335,10 @@ class EventManagement(Plugin):
         
         # store the association
         room_id = evt.room_id
-        self.room_mapping.add(organizer,event, room_id)
+
+        rm = Room(room_id,{"item": item_id, "variant": variant_id})
+        #TODO: add room from object
+        self.room_mapping.add_object(organizer, event, rm)
         await evt.reply("room associated successfully")
 
     
