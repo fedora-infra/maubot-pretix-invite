@@ -61,6 +61,7 @@ class Pretix:
         self.logger = log
 
         # if in container
+        # TODO: this is not pretix related and should probably be passed in
         maubot_base_location = Path("/data")
         if not maubot_base_location.exists():
             # Fedora dev environment
