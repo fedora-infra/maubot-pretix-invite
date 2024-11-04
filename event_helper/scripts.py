@@ -9,7 +9,7 @@ import os
 log = Logger("pretix-scripts")
 
 
-if __name__ == "__main_":
+if __name__ == "__main__":
 
 
     load_dotenv()
