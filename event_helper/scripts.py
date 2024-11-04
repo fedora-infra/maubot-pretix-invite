@@ -46,8 +46,15 @@ if __name__ == "__main__":
             sys.exit()
             
 
-    
-    print(pretix_ins.fetch_data(organizer, event, order_code="T03JJ"))
+    order = pretix_ins.fetch_data(organizer, event, order_code="M0UH7")
+    position = order[0].get("positions")[0]
+    item_id = position.get("item")
+    variant_id = position.get("variation")
+    variant = pretix_ins.fetch_variants(organizer, event, item_id)
+    # TODO: this is jank and we should do a proper lookup
+    variant_name = variant[variant_id-1].get("value").get("en")
+    print(variant_name)
+    # print(pretix_ins.fetch_data(organizer, event, order_code="K0LML"))
 
 
     # prompt for user input to return callback token
