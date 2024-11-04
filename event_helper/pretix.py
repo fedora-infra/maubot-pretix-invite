@@ -167,6 +167,8 @@ class Pretix:
             token (json): the token to store
         """
         self._token = Token.from_json(token)
+        if not self.token_storage_file.exists():
+            self.token_storage_file.touch()
         self.token_storage_file.write_text(json.dumps(token), 'utf-8')
 
     def handle_incoming_webhook(self, jsondata:dict) -> (bool, dict):
