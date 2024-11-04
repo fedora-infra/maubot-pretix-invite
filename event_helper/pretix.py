@@ -248,7 +248,8 @@ class Pretix:
             state=querystring.get("state")[0],
             # token=token,
             auto_refresh_url=self.token_url,
-            token_updater=self._update_token
+            token_updater=self._update_token,
+            redirect_uri=self.oauth.redirect_uri
         )
         token = self.oauth.fetch_token(
             self.token_url,
