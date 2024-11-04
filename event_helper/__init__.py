@@ -27,6 +27,9 @@ class Config(BaseProxyConfig):
         helper.copy("pretix_redirect_url")
         helper.copy("allowlist")
 
+@dataclass(frozen=True)
+class Room:
+    matrix_id: str
 @dataclass
 class EventRooms:
     _mapping: dict = field(default_factory=lambda: {})
@@ -41,21 +44,25 @@ class EventRooms:
         return self._mapping[organizer].get(event)
     
     def add(self, organizer:str, event:str, room_id:str):
+        self.add_object(organizer, event, Room(room_id))
+
+    
+    def add_object(self, organizer:str, event:str, room:Room):
         if self._mapping.get(organizer) is None:
             self._mapping[organizer] = {} 
         
         if self._mapping[organizer].get(event) is None:
             self._mapping[organizer][event] = set()
         
-        self._mapping[organizer][event].add(room_id)
+        self._mapping[organizer][event].add(room)
 
     def remove(self, organizer:str, event:str, room_id:str):
         if room_id in self.rooms_by_event(organizer,event):
-            self._mapping[organizer][event].remove(room_id)
+            self._mapping[organizer][event].remove(Room(room_id))
 
 
     def room_is_mapped(self, room:str):
-        return len(self.events_for_room(room)) > 0
+        return len(self.events_for_room(Room(room))) > 0
 
     def events_for_room(self, room:str):
         """return a list of events that a room is mapped to in "organizer/event" format
@@ -69,7 +76,7 @@ class EventRooms:
         events = []
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
-                if room in self._mapping[organizer][event]:
+                if Room(room) in self._mapping[organizer][event]:
                     events.append(f"{organizer}/{event}")
         return events
     
@@ -79,7 +86,7 @@ class EventRooms:
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
                 if room in event:
-                    self._mapping[organizer][event].remove(room)
+                    self._mapping[organizer][event].remove(Room(room))
 
 
 class EventManagement(Plugin):
