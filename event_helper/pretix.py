@@ -67,8 +67,8 @@ class Pretix:
             maubot_base_location = Path("/var/lib/maubot/")
         
         if not maubot_base_location.exists():
-            # homedir
-            maubot_base_location = Path("~")
+            # current dir
+            maubot_base_location = Path(".")
 
         self.token_storage_file = maubot_base_location / token_storage_filename
 
