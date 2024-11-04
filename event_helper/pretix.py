@@ -304,6 +304,20 @@ class Pretix:
 
         return data
 
+    def fetch_variants(self, organizer, event, itemID) -> dict:
+        url = self.base_url + f"/organizers/{organizer}/events/{event}/items/{itemID}/variations"
+
+        data = []
+
+        while url:
+            response = self.oauth.get(url, client_id=self._client_id, client_secret=self._client_secret)
+            response.raise_for_status()
+            json_response = response.json()
+            data.extend(json_response.get('results', []))
+            url = json_response.get('next')
+      
+        return data
+
     def extract_answers(self, schema: dict, filter_processed=False) -> List[AttendeeMatrixInformation]:
         def reducer(entries: Dict[str, dict], result: dict) -> Dict[str, dict]:
             for position in result.get('positions', []):
