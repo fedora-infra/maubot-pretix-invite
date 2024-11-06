@@ -12,6 +12,7 @@ from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
+from pathlib import Path
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
