@@ -431,7 +431,7 @@ class EventManagement(Plugin):
         statustext = [
             f"Pretix status: {pretix_auth_status}",
             f"Room Status: the current room {room_associated} assigned to an event",
-            f"Events: {','.join(self.room_mapping.events_for_room(room_id))}"
+            f"Events: {','.join(self.room_mapping.events_for_room(Room(room_id)))}"
         ]
         await evt.reply(NL.join(statustext))
         
