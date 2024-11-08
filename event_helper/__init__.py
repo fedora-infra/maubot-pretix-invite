@@ -79,6 +79,9 @@ class EventRooms:
         return self._mapping[organizer].get(event)
 
     def rooms_by_ticket_variant(self, organizer:str, event:str, item_id:str, variant_id:str):
+        item_id = str(item_id)
+        variant_id = str(variant_id)
+        
         event_rooms = self.rooms_by_event(organizer, event)
 
         rooms_matching_filter = filter(lambda r: r.matches(item_id, variant_id), event_rooms)

@@ -44,6 +44,15 @@ class TestEventRooms(unittest.TestCase):
 
         self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", "x", "y"), list([rm]))
 
+    def test_filter_retrieval_type_mismatch(self):
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
+        rm = Room("c", FilterConditions("1", "2"))
+        self.mapping.add_object("a", "b", rm)
+
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
+
+        self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", 1, 2), list([rm]))
+
 
 
 if __name__ == '__main__':
