@@ -33,6 +33,17 @@ class FilterConditions:
     item: str = None
     variant: str = None
 
+    def __str__(self):
+        text = []
+        if self.item is not None:
+            text.append(f"item={self.item}")
+        elif self.variant is not None:
+            text.append(f"variant={self.variant}")
+        else:
+            return ""
+
+        return f"({', '.join(text)})"
+
 @dataclass(frozen=True)
 class Room:
     matrix_id: str
