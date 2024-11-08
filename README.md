@@ -91,6 +91,13 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on the development wor
 This project may handle, and possibly store, information that could be considered "personal information" under various privacy rules such as the GDPR. While this bot tries to use as little information as possible in order to operate it is ultimately the responsibility of the event hosts and operators of this bot to ensure [that its use of information](#how-it-works) is compliant with the laws in your area.  
 
 ## Howtos
+### Troubleshooting
+If the `mbc build -u` step of using the matrix-bots dev environment fails due to missing python dependencies, do this:
+
+1. run `vagrant ssh matrixbots` to get into the matrix bots VM (if you arent already)
+2. run `pip install -r requirements.txt` from within the mounted folder (likely at `~/_maubot-events/`). This installs missing dependencies needed by the bot but not present by default in maubot
+3. restart the bot by running `sudo service maubot restart`
+4. your `mbc build -u` should now succeed
 
 ### Pretix
 
