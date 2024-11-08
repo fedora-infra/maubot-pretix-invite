@@ -1,6 +1,6 @@
 import unittest
 import json
-from event_helper import Room, FilterConditions
+from event_helper import Room, FilterConditions, EventRooms
 
 
 
@@ -22,5 +22,17 @@ class TestRoom(unittest.TestCase):
         self.assertEqual(len(testset), 1)
 
 
+
+class TestEventRooms(unittest.TestCase):
+
+    def setUp(self):
+        self.mapping = EventRooms()
+
+    def test_add(self):
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
+        rm = Room("c")
+        self.mapping.add_object("a", "b", rm)
+
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
 if __name__ == '__main__':
     unittest.main()
