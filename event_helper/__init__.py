@@ -38,13 +38,17 @@ class Room:
     matrix_id: str
     condition: FilterConditions = FilterConditions()
 
+    @property
+    def has_filter(self):
+        return self.condition.item is not None or self.condition.variant is not None
+
     def matches(self, item, variant):
+        if not self.has_filter:
+            return True
         target_item = self.condition.item
         target_variant = self.condition.variant
 
-        if target_item is None and target_variant is None:
-            return True
-        elif target_item == item and target_variant is None:
+        if target_item == item and target_variant is None:
             return True
         elif target_item == item and target_variant == variant:
             return True
