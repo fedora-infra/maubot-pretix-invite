@@ -29,13 +29,18 @@ class Config(BaseProxyConfig):
         helper.copy("allowlist")
 
 @dataclass(frozen=True)
+class FilterConditions:
+    item: str = None
+    variant: str = None
+
+@dataclass(frozen=True)
 class Room:
     matrix_id: str
-    condition: dict = field(default_factory= lambda : {"item": None, "variant": None})
+    condition: FilterConditions = FilterConditions()
 
     def matches(self, item, variant):
-        target_item = self.condition.get("item")
-        target_variant = self.condition.get("variant")
+        target_item = self.condition.item
+        target_variant = self.condition.variant
 
         if target_item is None and target_variant is None:
             return True
@@ -337,7 +342,7 @@ class EventManagement(Plugin):
         # store the association
         room_id = evt.room_id
 
-        rm = Room(room_id, condition={"item": item_id, "variant": variant_id})
+        rm = Room(room_id, condition=FilterConditions(item_id, variant_id))
         #TODO: add room from object
         self.room_mapping.add_object(organizer, event, rm)
         await evt.reply("room associated successfully")
