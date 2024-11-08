@@ -343,9 +343,9 @@ class EventManagement(Plugin):
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
     @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
-    @command.argument("pretix_url", pass_raw=True, required=True)
-    @command.argument("item_id", pass_raw=True, required=False)
-    @command.argument("variant_id", pass_raw=True, required=False)
+    @command.argument("pretix_url", pass_raw=False, required=True)
+    @command.argument("item_id", pass_raw=False, required=False)
+    @command.argument("variant_id", pass_raw=False, required=False)
     async def setroom(self, evt: MessageEvent, pretix_url: str, item_id:str, variant_id:str) -> None:
         # permission check
         if evt.sender not in self.config["allowlist"]:
