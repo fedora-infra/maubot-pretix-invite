@@ -1,7 +1,13 @@
 import unittest
 import json
 from event_helper.pretix import Pretix, AttendeeMatrixInformation, question_id_to_header
+import logging
 class TestPretix(unittest.TestCase):
+
+    def test_instance_url(self):
+        pt = Pretix("12345", "67890", "redirect", logging.Logger("Test"), instance_url="https://test.domain")
+        self.assertEqual(pt._instance_url, "https://test.domain")
+        self.assertEqual(pt.base_url, "https://test.domain/api/v1")
 
     def test_question_id_to_header(self):
         self.assertEqual(question_id_to_header("matrix"), "Matrix ID")
