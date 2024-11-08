@@ -34,5 +34,17 @@ class TestEventRooms(unittest.TestCase):
         self.mapping.add_object("a", "b", rm)
 
         self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
+
+    def test_add_with_filters(self):
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
+        rm = Room("c", FilterConditions("x", "y"))
+        self.mapping.add_object("a", "b", rm)
+
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
+
+        self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", "x", "y"), list([rm]))
+
+
+
 if __name__ == '__main__':
     unittest.main()
