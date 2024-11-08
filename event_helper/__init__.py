@@ -120,8 +120,12 @@ class EventRooms:
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
                 for room in self._mapping[organizer][event]:
-                    if room.matrix_id == room_to_find.id:
-                        events.append(f"{organizer}/{event}")
+                    if room.matrix_id == room_to_find.matrix_id:
+                        orgEventName = f"{organizer}/{event}"
+                        if room.has_filter:
+                            orgEventName += " "
+                            orgEventName += str(room.condition)
+                        events.append(orgEventName)
         return events
     
     def purge_room(self, room):
