@@ -31,7 +31,7 @@ class Config(BaseProxyConfig):
 @dataclass(frozen=True)
 class Room:
     matrix_id: str
-    condition: field(default= {"item": None, "variant": None})
+    condition: dict = field(default_factory= lambda : {"item": None, "variant": None})
 
     def matches(self, item, variant):
         target_item = self.condition.get("item")
@@ -337,7 +337,7 @@ class EventManagement(Plugin):
         # store the association
         room_id = evt.room_id
 
-        rm = Room(room_id,{"item": item_id, "variant": variant_id})
+        rm = Room(room_id, condition={"item": item_id, "variant": variant_id})
         #TODO: add room from object
         self.room_mapping.add_object(organizer, event, rm)
         await evt.reply("room associated successfully")
