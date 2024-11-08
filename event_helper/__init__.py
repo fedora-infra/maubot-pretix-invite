@@ -12,6 +12,7 @@ from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
+from pathlib import Path
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
 from .pretix import Pretix, AttendeeMatrixInformation
@@ -27,6 +28,43 @@ class Config(BaseProxyConfig):
         helper.copy("pretix_redirect_url")
         helper.copy("allowlist")
 
+@dataclass(frozen=True)
+class FilterConditions:
+    item: str = None
+    variant: str = None
+
+    def __str__(self):
+        text = []
+        if self.item is not None:
+            text.append(f"item={self.item}")
+        
+        if self.variant is not None:
+            text.append(f"variant={self.variant}")
+
+        return f"({', '.join(text)})"
+
+@dataclass(frozen=True)
+class Room:
+    matrix_id: str
+    condition: FilterConditions = FilterConditions()
+
+    @property
+    def has_filter(self):
+        return self.condition.item is not None or self.condition.variant is not None
+
+    def matches(self, item, variant):
+        if not self.has_filter:
+            return True
+        target_item = self.condition.item
+        target_variant = self.condition.variant
+
+        if target_item == item and target_variant is None:
+            return True
+        elif target_item == item and target_variant == variant:
+            return True
+        else:
+            return False
+
 @dataclass
 class EventRooms:
     _mapping: dict = field(default_factory=lambda: {})
@@ -39,25 +77,39 @@ class EventRooms:
             return set()
         
         return self._mapping[organizer].get(event)
+
+    def rooms_by_ticket_variant(self, organizer:str, event:str, item_id:str, variant_id:str):
+        item_id = str(item_id)
+        variant_id = str(variant_id)
+        
+        event_rooms = self.rooms_by_event(organizer, event)
+
+        rooms_matching_filter = filter(lambda r: r.matches(item_id, variant_id), event_rooms)
+
+        return list(rooms_matching_filter)
     
     def add(self, organizer:str, event:str, room_id:str):
+        self.add_object(organizer, event, Room(room_id))
+
+    
+    def add_object(self, organizer:str, event:str, room:Room):
         if self._mapping.get(organizer) is None:
             self._mapping[organizer] = {} 
         
         if self._mapping[organizer].get(event) is None:
             self._mapping[organizer][event] = set()
         
-        self._mapping[organizer][event].add(room_id)
+        self._mapping[organizer][event].add(room)
 
     def remove(self, organizer:str, event:str, room_id:str):
         if room_id in self.rooms_by_event(organizer,event):
-            self._mapping[organizer][event].remove(room_id)
+            self._mapping[organizer][event].remove(Room(room_id))
 
 
     def room_is_mapped(self, room:str):
-        return len(self.events_for_room(room)) > 0
+        return len(self.events_for_room(Room(room))) > 0
 
-    def events_for_room(self, room:str):
+    def events_for_room(self, room_to_find:Room):
         """return a list of events that a room is mapped to in "organizer/event" format
 
         Args:
@@ -69,8 +121,13 @@ class EventRooms:
         events = []
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
-                if room in self._mapping[organizer][event]:
-                    events.append(f"{organizer}/{event}")
+                for room in self._mapping[organizer][event]:
+                    if room.matrix_id == room_to_find.matrix_id:
+                        orgEventName = f"{organizer}/{event}"
+                        if room.has_filter:
+                            orgEventName += " "
+                            orgEventName += str(room.condition)
+                        events.append(orgEventName)
         return events
     
     def purge_room(self, room):
@@ -79,7 +136,7 @@ class EventRooms:
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
                 if room in event:
-                    self._mapping[organizer][event].remove(room)
+                    self._mapping[organizer][event].remove(Room(room))
 
 
 class EventManagement(Plugin):
@@ -93,11 +150,26 @@ class EventManagement(Plugin):
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
         self.room_mapping = EventRooms()
+
+        # if in container
+        maubot_base_location = Path("/data")
+        if not maubot_base_location.exists():
+            # Fedora dev environment
+            maubot_base_location = Path("/var/lib/maubot/")
+        
+        # if it still doesnt exist
+        if not maubot_base_location.exists():
+            # fall back to the default supplied by pretix class (current directory)
+            maubot_base_location = None
+
+
+
         self.pretix = Pretix(
             self.config["pretix_client_id"],
             self.config["pretix_client_secret"],
             self.config["pretix_redirect_url"],
             self.log,
+            token_storage_path=maubot_base_location,
             instance_url=self.config["pretix_instance_url"],
         )
 
@@ -131,8 +203,12 @@ class EventManagement(Plugin):
         # order may already be processed (because im messing with it), so this may be empty
         order_id = attendees[0].order_code
         matrix_id = attendees[0].matrix_id
+        order = self.pretix.fetch_orders(organizer, event, order_code=order_id)
+        position = order[0].get("positions")[0]
+        item_id = position.get("item")
+        variant_id = position.get("variation")
 
-        room_ids = list(self.room_mapping.rooms_by_event(organizer, event))
+        room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)]
         
         if len(room_ids) == 0:
             self.log.debug(f"found no configured rooms for event {event} from organizer {organizer}."
@@ -269,8 +345,10 @@ class EventManagement(Plugin):
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
     @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
-    @command.argument("pretix_url", pass_raw=True, required=True)
-    async def setroom(self, evt: MessageEvent, pretix_url: str) -> None:
+    @command.argument("pretix_url", pass_raw=False, required=True)
+    @command.argument("item_id", pass_raw=False, required=False)
+    @command.argument("variant_id", pass_raw=False, required=False)
+    async def setroom(self, evt: MessageEvent, pretix_url: str, item_id:str, variant_id:str) -> None:
         # permission check
         if evt.sender not in self.config["allowlist"]:
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
@@ -285,7 +363,10 @@ class EventManagement(Plugin):
         
         # store the association
         room_id = evt.room_id
-        self.room_mapping.add(organizer,event, room_id)
+
+        rm = Room(room_id, condition=FilterConditions(item_id, variant_id))
+        #TODO: add room from object
+        self.room_mapping.add_object(organizer, event, rm)
         await evt.reply("room associated successfully")
 
     
@@ -352,7 +433,7 @@ class EventManagement(Plugin):
         statustext = [
             f"Pretix status: {pretix_auth_status}",
             f"Room Status: the current room {room_associated} assigned to an event",
-            f"Events: {','.join(self.room_mapping.events_for_room(room_id))}"
+            f"Events: {','.join(self.room_mapping.events_for_room(Room(room_id)))}"
         ]
         await evt.reply(NL.join(statustext))
         

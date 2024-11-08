@@ -53,24 +53,17 @@ class AttendeeMatrixInformation:
 
 class Pretix:
 
-    def __init__(self, client_id, client_secret, redirect_uri, log:TraceLogger, token_storage_filename="pretix-token.json", instance_url="https://pretix.eu"):
+    def __init__(self, client_id, client_secret, redirect_uri, log:TraceLogger, token_storage_path: Path = Path("."), token_storage_filename="pretix-token.json", instance_url="https://pretix.eu"):
         self._instance_url = instance_url
         self._client_secret = client_secret
         self._processed_rows = []
         self._client_id = client_id
         self.logger = log
 
-        # if in container
-        maubot_base_location = Path("/data")
-        if not maubot_base_location.exists():
-            # Fedora dev environment
-            maubot_base_location = Path("/var/lib/maubot/")
+        if token_storage_path is None:
+            token_storage_path = Path(".")
         
-        if not maubot_base_location.exists():
-            # homedir
-            maubot_base_location = Path("~")
-
-        self.token_storage_file = maubot_base_location / token_storage_filename
+        self.token_storage_file = token_storage_path.joinpath(token_storage_filename)
 
         # if token storage file exists, save it
         if self.token_storage_file.exists():
@@ -269,6 +262,8 @@ class Pretix:
     
     @property
     def base_url(self):
+        if self._instance_url.endswith("/"):
+            return self._instance_url + "api/v1"
         return self._instance_url + "/api/v1"
 
     def listen(self):
