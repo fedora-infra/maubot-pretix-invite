@@ -92,7 +92,7 @@ class EventRooms:
     def room_is_mapped(self, room:str):
         return len(self.events_for_room(Room(room))) > 0
 
-    def events_for_room(self, room:str):
+    def events_for_room(self, room_to_find:Room):
         """return a list of events that a room is mapped to in "organizer/event" format
 
         Args:
@@ -104,8 +104,9 @@ class EventRooms:
         events = []
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
-                if Room(room) in self._mapping[organizer][event]:
-                    events.append(f"{organizer}/{event}")
+                for room in self._mapping[organizer][event]:
+                    if room.matrix_id == room_to_find.id:
+                        events.append(f"{organizer}/{event}")
         return events
     
     def purge_room(self, room):
