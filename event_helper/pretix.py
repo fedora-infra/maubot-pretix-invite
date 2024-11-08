@@ -262,6 +262,8 @@ class Pretix:
     
     @property
     def base_url(self):
+        if self._instance_url.endswith("/"):
+            return self._instance_url + "api/v1"
         return self._instance_url + "/api/v1"
 
     def listen(self):
