@@ -1,6 +1,7 @@
 import hashlib
 from itertools import chain
 import hmac
+import json
 from typing import List
 from dataclasses import dataclass, field
 
@@ -68,6 +69,25 @@ class Room:
 @dataclass
 class EventRooms:
     _mapping: dict = field(default_factory=lambda: {})
+    persist_path:Path = field(default_factory=Path, kw_only=True, hash=False)
+    persist_filename:str = field(default="event_rooms.json", kw_only=True, hash=False)
+
+    def persist(self):
+        persistfile = self.persist_path.joinpath(self.persist_filename)
+        
+        persistfile.write_text(json.dumps(self._mapping), encoding="utf8")
+    
+    @classmethod
+    def from_path(cls, persist_path=Path("."), persist_filename="event_rooms.json"):
+        persistfile = persist_path.joinpath(persist_filename)
+        if not persistfile.exists():
+            print("persist file doesnt exist, creating fresh room map")
+            return cls()
+        data = persistfile.read_text(encoding="utf8")
+
+        mapping = json.loads(data)
+            
+        return cls(mapping, persist_filename=persist_filename, persist_path=persist_path)
 
     def rooms_by_event(self, organizer:str, event:str):
         if self._mapping.get(organizer) is None:
@@ -100,10 +120,12 @@ class EventRooms:
             self._mapping[organizer][event] = set()
         
         self._mapping[organizer][event].add(room)
+        self.persist()
 
     def remove(self, organizer:str, event:str, room_id:str):
         if room_id in self.rooms_by_event(organizer,event):
             self._mapping[organizer][event].remove(Room(room_id))
+        self.persist()
 
 
     def room_is_mapped(self, room:str):
@@ -136,7 +158,7 @@ class EventRooms:
         for organizer in self._mapping:
             for event in self._mapping[organizer]:
                 if room in event:
-                    self._mapping[organizer][event].remove(Room(room))
+                    self.remove(organizer, event, room.matrix_id)
 
 
 class EventManagement(Plugin):
@@ -149,7 +171,7 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
-        self.room_mapping = EventRooms()
+        self.room_mapping = EventRooms.from_path()
 
         # if in container
         maubot_base_location = Path("/data")
