@@ -26,7 +26,7 @@ class TestRoom(unittest.TestCase):
 class TestEventRooms(unittest.TestCase):
 
     def setUp(self):
-        self.mapping = EventRooms()
+        self.mapping = EventRooms(persist_filename="rooms_mapping_test.json")
 
     def test_add(self):
         self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
@@ -53,6 +53,10 @@ class TestEventRooms(unittest.TestCase):
 
         self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", 1, 2), list([rm]))
 
+
+    
+    def tearDown(self):
+        self.mapping.persistfile.unlink()
 
 
 if __name__ == '__main__':
