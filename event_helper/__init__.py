@@ -106,6 +106,8 @@ class EventRooms:
     @classmethod
     def from_path(cls, persist_path=Path("."), persist_filename="event_rooms.json"):
         # self is not valid here... so we need to reconstruct this manually
+        if persist_path is None:
+            persist_path = Path(".")
         persistfile = persist_path.joinpath(persist_filename)
         if not persistfile.exists():
             print("persist file doesnt exist, creating fresh room map")
@@ -202,7 +204,6 @@ class EventManagement(Plugin):
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
-        self.room_mapping = EventRooms.from_path()
 
         # if in container
         maubot_base_location = Path("/data")
@@ -215,6 +216,7 @@ class EventManagement(Plugin):
             # fall back to the default supplied by pretix class (current directory)
             maubot_base_location = None
 
+        self.room_mapping = EventRooms.from_path(persist_path=maubot_base_location)
 
 
         self.pretix = Pretix(
