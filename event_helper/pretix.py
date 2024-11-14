@@ -307,7 +307,7 @@ class Pretix:
                         "Pseudonymization ID": position.get("pseudonymization_id", ''),
                         "Fedora Account Services (FAS)": '',
                         "Matrix ID": '',
-                        "Invoice address name": result.get('invoice_address', {}).get('name', ''),
+                        # "Invoice address name": result.get('invoice_address', {}).get('name', ''),
                     }
                 for answer in position.get('answers', []):
                     if answer['question_identifier'] in {'matrix', 'fas'}:
