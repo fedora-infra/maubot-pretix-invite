@@ -66,6 +66,12 @@ class Room:
         else:
             return False
 
+def set_default(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError
+
+
 @dataclass
 class EventRooms:
     _mapping: dict = field(default_factory=lambda: {})
@@ -75,7 +81,7 @@ class EventRooms:
     def persist(self):
         persistfile = self.persist_path.joinpath(self.persist_filename)
         
-        persistfile.write_text(json.dumps(self._mapping), encoding="utf8")
+        persistfile.write_text(json.dumps(self._mapping, default=set_default), encoding="utf8")
     
     @classmethod
     def from_path(cls, persist_path=Path("."), persist_filename="event_rooms.json"):
