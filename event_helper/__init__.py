@@ -94,15 +94,17 @@ class EventRooms:
     persist_path:Path = field(default_factory=Path, kw_only=True, hash=False)
     persist_filename:str = field(default="event_rooms.json", kw_only=True, hash=False)
 
-    def persist(self):
-        persistfile = self.persist_path.joinpath(self.persist_filename)
-        
-        persistfile.write_text(json.dumps(self._mapping, cls=RoomEncoder), encoding="utf8")
+    @property
+    def persistfile(self):
+        return self.persist_path.joinpath(self.persist_filename)
+
+    def persist(self):        
+        self.persistfile.write_text(json.dumps(self._mapping, cls=RoomEncoder), encoding="utf8")
     
     @classmethod
     def from_path(cls, persist_path=Path("."), persist_filename="event_rooms.json"):
-        persistfile = persist_path.joinpath(persist_filename)
-        if not persistfile.exists():
+        
+        if not self.persistfile.exists():
             print("persist file doesnt exist, creating fresh room map")
             return cls()
         data = persistfile.read_text(encoding="utf8")
