@@ -84,8 +84,10 @@ class RoomEncoder(JSONEncoder):
         return o.__dict__
 
 def decode_hook(obj):
-    if isinstance(obj, list):
-        return set([Room.from_json(i) for i in obj])
+    if isinstance(obj, dict):
+        if 'matrix_id' in obj.keys():
+            return Room.from_json(obj)
+    return obj
         
 
 @dataclass
@@ -111,6 +113,10 @@ class EventRooms:
         data = persistfile.read_text(encoding="utf8")
 
         mapping = json.loads(data, object_hook=decode_hook)
+
+        for organizer, events in mapping.items():
+            for event, rooms in events.items():
+                mapping[organizer][event] = set(rooms)
             
         return cls(mapping, persist_filename=persist_filename, persist_path=persist_path)
 

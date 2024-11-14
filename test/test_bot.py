@@ -68,6 +68,22 @@ class TestEventRooms(unittest.TestCase):
         self.assertEqual(data, {"a": {"b": [{"matrix_id": "c", "condition": {'item': None, 'variant': None}}]}})
 
 
+    def test_persist_restore(self):
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
+        rm = Room("c")
+        self.mapping.add_object("a", "b", rm)
+
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
+
+        self.mapping.persist()
+
+        restored_mapping = EventRooms.from_path(persist_filename="rooms_mapping_test.json")
+        self.assertEqual(len(restored_mapping.rooms_by_event("a", "b")), 1)
+
+        self.assertEqual(restored_mapping.rooms_by_event("a", "b"), set([rm]))
+
+
+
     
     def tearDown(self):
         self.mapping.persistfile.unlink()
