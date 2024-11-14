@@ -111,7 +111,7 @@ class EventRooms:
         persistfile = persist_path.joinpath(persist_filename)
         if not persistfile.exists():
             print("persist file doesnt exist, creating fresh room map")
-            return cls()
+            return cls(persist_filename=persist_filename, persist_path=persist_path)
         data = persistfile.read_text(encoding="utf8")
 
         mapping = json.loads(data, object_hook=decode_hook)
