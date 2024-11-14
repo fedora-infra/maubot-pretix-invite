@@ -70,6 +70,7 @@ class Pretix:
             data = self.token_storage_file.read_text()
             self._token = Token.from_json(json.loads(data))
             self.logger.debug("token loaded from file")
+            # TODO: check this token to see if its still valid
 
         # most providers will ask you for extra credentials to be passed along
         # when refreshing tokens, usually for authentication purposes.

@@ -174,8 +174,11 @@ class EventManagement(Plugin):
         )
 
         self.webapp.add_route("POST", "/notify", self.handle_request)
+        # TODO: this has double slashes here
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
-        print(self.webapp_url)
+        print(self.webapp_url)  
+
+        # TODO: add /auth route
 
     def _get_handler_commands(self):
         for cmd, _ignore in chain(*self.client.event_handlers.values()):
@@ -417,6 +420,9 @@ class EventManagement(Plugin):
             return
         
         await evt.reply(f"Authorization successful")
+
+
+    # TODO: deauth command
 
     @command.new(name="status", help="check the status of the various configuration options for this bot")  
     async def status(self, evt: MessageEvent) -> None:
