@@ -103,8 +103,9 @@ class EventRooms:
     
     @classmethod
     def from_path(cls, persist_path=Path("."), persist_filename="event_rooms.json"):
-        
-        if not self.persistfile.exists():
+        # self is not valid here... so we need to reconstruct this manually
+        persistfile = persist_path.joinpath(persist_filename)
+        if not persistfile.exists():
             print("persist file doesnt exist, creating fresh room map")
             return cls()
         data = persistfile.read_text(encoding="utf8")
