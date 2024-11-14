@@ -53,6 +53,20 @@ class TestEventRooms(unittest.TestCase):
 
         self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", 1, 2), list([rm]))
 
+    def test_persists_to_file(self):
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
+        rm = Room("c")
+        self.mapping.add_object("a", "b", rm)
+
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
+
+        self.mapping.persist()
+
+        with open("rooms_mapping_test.json", "r") as f:
+            data = json.load(f)
+
+        self.assertEqual(data, {"a": {"b": [{"matrix_id": "c", "condition": {'item': None, 'variant': None}}]}})
+
 
     
     def tearDown(self):
