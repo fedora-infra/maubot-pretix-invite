@@ -2,6 +2,7 @@ import hashlib
 from itertools import chain
 import hmac
 import json
+from json import JSONEncoder
 from typing import List
 from dataclasses import dataclass, field
 
@@ -34,6 +35,10 @@ class FilterConditions:
     item: str = None
     variant: str = None
 
+    @classmethod
+    def from_json(cls, json_data: dict):
+        return cls(json_data.get("item"), json_data.get("variant"))
+
     def __str__(self):
         text = []
         if self.item is not None:
@@ -48,6 +53,11 @@ class FilterConditions:
 class Room:
     matrix_id: str
     condition: FilterConditions = FilterConditions()
+
+    @classmethod
+    def from_json(cls, json_data: dict):
+        return cls(json_data["matrix_id"], FilterConditions.from_json(json_data["condition"]))
+
 
     @property
     def has_filter(self):
@@ -66,11 +76,17 @@ class Room:
         else:
             return False
 
-def set_default(obj):
-    if isinstance(obj, set):
-        return list(obj)
-    raise TypeError
+class RoomEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, set):
+            return list(o)
+        
+        return o.__dict__
 
+def decode_hook(obj):
+    if isinstance(obj, list):
+        return set([Room.from_json(i) for i in obj])
+        
 
 @dataclass
 class EventRooms:
@@ -81,7 +97,7 @@ class EventRooms:
     def persist(self):
         persistfile = self.persist_path.joinpath(self.persist_filename)
         
-        persistfile.write_text(json.dumps(self._mapping, default=set_default), encoding="utf8")
+        persistfile.write_text(json.dumps(self._mapping, cls=RoomEncoder), encoding="utf8")
     
     @classmethod
     def from_path(cls, persist_path=Path("."), persist_filename="event_rooms.json"):
@@ -91,7 +107,7 @@ class EventRooms:
             return cls()
         data = persistfile.read_text(encoding="utf8")
 
-        mapping = json.loads(data)
+        mapping = json.loads(data, object_hook=decode_hook)
             
         return cls(mapping, persist_filename=persist_filename, persist_path=persist_path)
 
