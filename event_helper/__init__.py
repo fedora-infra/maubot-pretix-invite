@@ -382,6 +382,8 @@ class EventManagement(Plugin):
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
 
+        #TODO: check if pretix URL is blank and reply with warning or use the stored events for the current room
+
         room_id = evt.room_id
 
         if not self.pretix.has_token:
@@ -402,8 +404,7 @@ class EventManagement(Plugin):
         data = self.pretix.extract_answers(data, filter_processed=True)
 
         failed_invites = await self.invite_attendees(room_id, data)
-        # TODO: mark successful ones as processed
-        
+        # TODO: mark successful ones as processed?
 
         self.log.debug(f"failed invites {failed_invites}")
                 
@@ -476,6 +477,10 @@ class EventManagement(Plugin):
         if auth_url is not None and auth_url != "":
             self.pretix.set_token_from_auth_callback(auth_url)
         
+        # check if we have a valid refresh token
+        # if yes, refresh the token
+        # if no, provide the auth URL
+        
         if not self.pretix.test_auth()[0]:
             auth_url = self.pretix.get_auth_url()
             # inform user to visit the url and run the !token command with the response
@@ -484,7 +489,7 @@ class EventManagement(Plugin):
         
         await evt.reply(f"Authorization successful")
 
-
+    # TODO: reauth command?
     # TODO: deauth command
 
     @command.new(name="status", help="check the status of the various configuration options for this bot")  
@@ -495,6 +500,7 @@ class EventManagement(Plugin):
             return
         
         room_id = evt.room_id
+        # TODO: check permissions and make sure we can access organizers and events (maybe by listing them)
         test_result, details = self.pretix.test_auth()
         pretix_auth_status = "authorized" if test_result else "not authorized"
         room_associated = "is" if self.room_mapping.room_is_mapped(room_id) else "is not"
