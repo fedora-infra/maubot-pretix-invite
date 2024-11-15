@@ -262,11 +262,16 @@ class EventManagement(Plugin):
         order_id = attendees[0].order_code
         matrix_id = attendees[0].matrix_id
         order = self.pretix.fetch_orders(organizer, event, order_code=order_id)
-        position = order[0].get("positions")[0]
-        item_id = position.get("item")
-        variant_id = position.get("variation")
+        room_ids = []
+        try:
+            position = order[0].get("positions")[0]
+            item_id = position.get("item")
+            variant_id = position.get("variation")
 
-        room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)]
+            room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)]
+        except Exception as e:
+            self.log.error(f"failed to find room for event {event} from organizer {organizer} with order {order_id}: {e}\n\tTrying without ticket variant")
+            room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_event(organizer, event)]
         
         if len(room_ids) == 0:
             self.log.debug(f"found no configured rooms for event {event} from organizer {organizer}."
