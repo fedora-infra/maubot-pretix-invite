@@ -404,6 +404,9 @@ class EventManagement(Plugin):
         failed_invites = await self.invite_attendees(room_id, data)
         # TODO: mark successful ones as processed
         
+
+        self.log.debug(f"failed invites {failed_invites}")
+                
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
