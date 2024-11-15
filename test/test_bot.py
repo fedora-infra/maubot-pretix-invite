@@ -35,6 +35,16 @@ class TestEventRooms(unittest.TestCase):
 
         self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
 
+    def test_add_nofilter_matches_all_filter_values(self):
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
+        rm = Room("c")
+        self.mapping.add_object("a", "b", rm)
+
+        self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
+        self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", "x", "y"), list([rm]))
+
+
+
     def test_add_with_filters(self):
         self.assertEqual(self.mapping.rooms_by_event("a", "b"), set())
         rm = Room("c", FilterConditions("x", "y"))
@@ -81,8 +91,6 @@ class TestEventRooms(unittest.TestCase):
         self.assertEqual(len(restored_mapping.rooms_by_event("a", "b")), 1)
 
         self.assertEqual(restored_mapping.rooms_by_event("a", "b"), set([rm]))
-
-
 
     
     def tearDown(self):
