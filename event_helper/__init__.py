@@ -228,7 +228,7 @@ class EventManagement(Plugin):
             instance_url=self.config["pretix_instance_url"],
         )
 
-        self.webapp.add_route("POST", "/notify", self.handle_request)
+        self.webapp.add_route("POST", "/notify", self.handle_pretix_webhook)
         # TODO: this has double slashes here
         self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
         print(self.webapp_url)  
@@ -244,7 +244,7 @@ class EventManagement(Plugin):
                 continue  # pragma: no cover
             yield cmd
 
-    async def handle_request(self, request):
+    async def handle_pretix_webhook(self, request):
         json = await request.json()
         
         # this checks whether the webhook type is correct
