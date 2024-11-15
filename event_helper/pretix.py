@@ -142,7 +142,7 @@ class Pretix:
 
     @property
     def oauth_url(self):
-        return self.get_oauth_url()
+        return self.get_auth_url()
 
     @property
     def token_url(self):
