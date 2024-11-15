@@ -229,9 +229,7 @@ class EventManagement(Plugin):
         )
 
         self.webapp.add_route("POST", "/notify", self.handle_pretix_webhook)
-        # TODO: this has double slashes here
-        self.log.info(f"Webhook URL is: {self.webapp_url}/notify")
-        print(self.webapp_url)  
+        self.log.info(f"Webhook URL is: {self.webapp_url}notify") 
 
         # TODO: add /auth route
 
