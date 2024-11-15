@@ -268,11 +268,21 @@ class EventManagement(Plugin):
             item_id = position.get("item")
             variant_id = position.get("variation")
 
-            room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)]
+            rms = self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)
+            self.log.debug(rms)
+            room_ids = [r.matrix_id for r in rms]
         except Exception as e:
             self.log.error(f"failed to find room for event {event} from organizer {organizer} with order {order_id}: {e}\n\tTrying without ticket variant")
-            room_ids = [r.matrix_id for r in self.room_mapping.rooms_by_event(organizer, event)]
-        
+            rms = self.room_mapping.rooms_by_event(organizer, event)
+            self.log.debug(rms)
+            room_ids = [r.matrix_id for r in rms]
+
+        if len(room_ids) == 0:
+            self.log.debug("falling back to eventwide check")
+            rms = self.room_mapping.rooms_by_event(organizer, event)
+            self.log.debug(rms)
+            room_ids = [r.matrix_id for r in rms]
+        # if still zero, give up
         if len(room_ids) == 0:
             self.log.debug(f"found no configured rooms for event {event} from organizer {organizer}."
             f"Unable to add attendee from registration {order_id} received via webhook")
