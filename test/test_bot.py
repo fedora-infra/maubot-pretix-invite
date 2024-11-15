@@ -42,6 +42,7 @@ class TestEventRooms(unittest.TestCase):
 
         self.assertEqual(self.mapping.rooms_by_event("a", "b"), set([rm]))
         self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", "x", "y"), list([rm]))
+        self.assertEqual(self.mapping.rooms_by_ticket_variant("a", "b", None, None), list([rm]))
 
 
 
