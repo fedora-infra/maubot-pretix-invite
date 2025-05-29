@@ -4,6 +4,9 @@ import string
 from collections import Counter
 import validators
 
+import asyncio
+INVITE_DELAY_SECONDS = 3
+
 
 from mautrix.api import HTTPAPI
 from mautrix.client.api.events import EventMethods
@@ -165,7 +168,12 @@ class MatrixUtils:
                 self.logger.debug(
                     f"User {mxid} not invited or in the room, inviting..."
                 )
-                await self.room_methods.invite_user(room_id, mxid)
+                try:
+                    await self.room_methods.invite_user(room_id, mxid)
+                    self.logger.debug(f"Invited {mxid} to {room_id}")
+                    await asyncio.sleep(INVITE_DELAY_SECONDS)
+                except Exception as e:
+                    self.logger.warning(f"Failed to invite {mxid} to {room_id}: {e}")
         self.logger.debug(f"Successfully ensured invitees for {room_id}")
 
     async def ensure_room_power_levels(
