@@ -14,6 +14,9 @@ from mautrix.client.api.events import EventMethods
 from mautrix.client.api.rooms import RoomMethods
 from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
+import os
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 from pathlib import Path
 
 from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
