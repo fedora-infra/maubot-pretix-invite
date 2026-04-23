@@ -419,6 +419,79 @@ class EventManagement(Plugin):
         # Ensure users have correct power levels
         # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
 
+    @command.new(name="testinvite", help="invite only admins or specific order IDs for testing (usage: <pretix_url> admins | orders <id1> <id2> ...)")
+    @command.argument("pretix_url", pass_raw=False, required=True)
+    @command.argument("mode_and_ids", pass_raw=True, required=True)
+    async def testinvite(self, evt: MessageEvent, pretix_url: str, mode_and_ids: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        if not self.pretix.has_token:
+            await evt.reply("Error when testing authentication. This may be due to a lack of authorization to access the configured pretix instance. Please run the `!authorize` command to authorize access")
+            return
+
+        try:
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(str(e))
+            return
+
+        tokens = mode_and_ids.split()
+        if not tokens:
+            await evt.reply("Usage: `!testinvite <pretix_url> admins` or `!testinvite <pretix_url> orders <id1> <id2> ...`")
+            return
+
+        mode = tokens[0].lower()
+        if mode not in ("admins", "orders"):
+            await evt.reply(f"Unknown mode `{mode}`. Valid modes are `admins` or `orders`.")
+            return
+
+        if mode == "orders" and len(tokens) < 2:
+            await evt.reply("Mode `orders` requires at least one order ID. Usage: `!testinvite <pretix_url> orders <id1> <id2> ...`")
+            return
+
+        room_id = evt.room_id
+
+        data = await self.pretix.fetch_data(organizer, event)
+        # filter_processed=False so test invites are never skipped due to prior state
+        data = self.pretix.extract_answers(data, filter_processed=False)
+
+        if mode == "admins":
+            allowlist = set(self.config["allowlist"])
+            filtered = [a for a in data if a.matrix_id in allowlist]
+            mode_desc = "admins"
+        else:
+            order_ids = set(tokens[1:])
+            filtered = [a for a in data if a.order_code in order_ids]
+            mode_desc = f"orders {', '.join(order_ids)}"
+
+        total = len(data)
+        matched = len(filtered)
+
+        if matched == 0:
+            await evt.reply(f"No attendees matched filter ({mode_desc}) out of {total} total. No invites sent.")
+            return
+
+        failed = await self.invite_attendees(room_id, filtered)
+        # intentionally do NOT call mark_as_processed so real batchinvite still works
+
+        failed_ids = [a.matrix_id for a in failed]
+        invited = matched - len(failed)
+
+        summary_lines = [
+            f"testinvite complete (filter: {mode_desc})",
+            f"Attendees in event: {total}",
+            f"Matched filter: {matched}",
+            f"Successfully invited: {invited}",
+            f"Failed: {len(failed)}",
+        ]
+        if failed_ids:
+            summary_lines.append(f"Failed matrix IDs: {', '.join(failed_ids)}")
+
+        await evt.reply(NL.join(summary_lines))
+
     @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
     @command.argument("pretix_url", pass_raw=False, required=True)
     @command.argument("item_id", pass_raw=False, required=False)
