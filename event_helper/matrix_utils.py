@@ -4,6 +4,19 @@ import string
 from collections import Counter
 import validators
 
+import asyncio
+
+# Fedora's Matrix homeserver — used as the assumed domain when recovering an
+# attendee's identity from their FAS username.
+FEDORA_HOMESERVER = "fedora.im"
+
+# Invite fan-out tuning. Rather than a fixed per-invite sleep (which serialized
+# every invite behind slow/dead homeservers that can hang for ~60s), invites run
+# through a bounded pool: at most MAX_CONCURRENT_INVITES in flight, each capped at
+# INVITE_TIMEOUT_SECONDS so one unreachable server can't stall the whole batch.
+# mautrix handles M_LIMIT_EXCEEDED (429) backoff internally.
+MAX_CONCURRENT_INVITES = 5
+INVITE_TIMEOUT_SECONDS = 20
 
 from mautrix.api import HTTPAPI
 from mautrix.client.api.events import EventMethods
@@ -78,8 +91,30 @@ def validate_matrix_id(possible_matrix_id:str, fix_at_sign=False, enforce_at_sig
     # The length of a user ID, including the @ sigil and the domain, MUST NOT exceed 255 characters.
     if len(possible_matrix_id) > 255:
         raise ValueError("a matrix ID cannot be longer than 255 characters")
-    
+
     return possible_matrix_id
+
+
+def normalize_matrix_id(possible_matrix_id: str, fix_at_sign: bool = True) -> str:
+    """Apply safe, loss-free normalizations to a user-supplied Matrix ID, then validate it.
+
+    Attendees type their Matrix ID by hand on the registration form, so the raw value
+    frequently has recoverable noise: surrounding whitespace, a capitalized domain
+    (e.g. ``@alice:Fedora.im``), or a missing ``@``. This trims and lowercases the
+    value (Matrix domains are case-insensitive and localparts are conventionally
+    lowercase) and then delegates to :func:`validate_matrix_id`, which raises
+    ``ValueError`` for anything still malformed.
+
+    Args:
+        possible_matrix_id (str): the raw Matrix ID to normalize and validate
+        fix_at_sign (bool, Optional): prepend a missing leading ``@``. Defaults to True.
+    Returns:
+        str: the normalized, validated Matrix ID
+    """
+    if possible_matrix_id is None:
+        raise ValueError("a matrix ID cannot be a nonexistent value (None)")
+    candidate = possible_matrix_id.strip().lower()
+    return validate_matrix_id(candidate, fix_at_sign=fix_at_sign)
 
 
 class MatrixUtils:
@@ -153,20 +188,60 @@ class MatrixUtils:
                 invite_mxids.append(event.state_key)
         return member_mxids, invite_mxids
 
-    async def ensure_room_invitees(self, room_id: RoomID, user_info_map: UserInfoMap):
+    async def ensure_room_invitees(self, room_id: RoomID, user_info_map: UserInfoMap) -> dict:
+        """Invite everyone in user_info_map who is not already a member or invitee.
+
+        Invites run concurrently through a bounded pool (see MAX_CONCURRENT_INVITES /
+        INVITE_TIMEOUT_SECONDS) so a slow or unreachable homeserver can't stall the
+        whole batch.
+
+        Returns:
+            dict[str, str]: mapping of mxid -> failure reason for invites that did NOT
+            succeed. Empty if every invite went through (or everyone was already present).
+        """
         room_member_events = await self.event_methods.get_members(room_id)
         room_members, room_invitees = self.state_events_to_member_list(
             room_member_events
         )
         self.logger.debug(f"Room {room_id} has members:{str(room_members)}")
         self.logger.debug(f"Room {room_id} has invitees:{str(room_invitees)}")
-        for mxid in user_info_map:
-            if mxid not in room_members and mxid not in room_invitees:
-                self.logger.debug(
-                    f"User {mxid} not invited or in the room, inviting..."
-                )
-                await self.room_methods.invite_user(room_id, mxid)
-        self.logger.debug(f"Successfully ensured invitees for {room_id}")
+
+        to_invite = [
+            mxid
+            for mxid in user_info_map
+            if mxid not in room_members and mxid not in room_invitees
+        ]
+        if not to_invite:
+            self.logger.debug(f"No new invitees for {room_id}")
+            return {}
+
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_INVITES)
+        failed: dict = {}  # mxid -> reason
+
+        async def invite_one(mxid):
+            async with semaphore:
+                self.logger.debug(f"User {mxid} not invited or in the room, inviting...")
+                try:
+                    await asyncio.wait_for(
+                        self.room_methods.invite_user(room_id, mxid),
+                        timeout=INVITE_TIMEOUT_SECONDS,
+                    )
+                    self.logger.debug(f"Invited {mxid} to {room_id}")
+                except asyncio.TimeoutError:
+                    failed[mxid] = f"timed out after {INVITE_TIMEOUT_SECONDS}s"
+                    self.logger.warning(
+                        f"Timed out inviting {mxid} to {room_id} after {INVITE_TIMEOUT_SECONDS}s"
+                    )
+                except Exception as e:
+                    failed[mxid] = str(e)
+                    self.logger.warning(f"Failed to invite {mxid} to {room_id}: {e}")
+
+        await asyncio.gather(*(invite_one(mxid) for mxid in to_invite))
+        self.logger.debug(
+            f"Ensured invitees for {room_id}: "
+            f"{len(to_invite) - len(failed)} invited, {len(failed)} failed"
+        )
+        return failed
 
     async def ensure_room_power_levels(
         self, room_id: RoomID, user_info_map: UserInfoMap
