@@ -1,5 +1,5 @@
 FROM dock.mau.dev/maubot/maubot
 WORKDIR /maubot-events
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip --break-system-packages
 COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --break-system-packages
