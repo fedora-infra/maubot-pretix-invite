@@ -2,6 +2,7 @@ import hashlib
 from itertools import chain
 import hmac
 import json
+import os
 from json import JSONEncoder
 from typing import List
 from dataclasses import dataclass, field
@@ -28,6 +29,7 @@ class Config(BaseProxyConfig):
         helper.copy("pretix_client_id")
         helper.copy("pretix_client_secret")
         helper.copy("pretix_redirect_url")
+        helper.copy("allow_insecure_oauth_transport")
         helper.copy("allowlist")
 
 @dataclass(frozen=True)
@@ -201,6 +203,19 @@ class EventManagement(Plugin):
 
     async def start(self):
         self.config.load_and_update()
+
+        # oauthlib refuses an OAuth2 token exchange it does not see as HTTPS. This
+        # opt-in escape hatch is for deployments that reach pretix through a
+        # TLS-terminating proxy presenting the token endpoint as http:// to the bot.
+        # Set at runtime (before the Pretix client is built) rather than at import.
+        if self.config["allow_insecure_oauth_transport"]:
+            os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+            self.log.warning(
+                "allow_insecure_oauth_transport is enabled: set "
+                "OAUTHLIB_INSECURE_TRANSPORT=1 for this process, disabling "
+                "oauthlib's transport-security check."
+            )
+
         self.room_methods = RoomMethods(api=self.client.api)
         self.event_methods = EventMethods(api=self.client.api)
         self.matrix_utils = MatrixUtils(self.client.api, self.log)
