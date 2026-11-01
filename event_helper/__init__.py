@@ -16,8 +16,13 @@ from mautrix.util.config import BaseProxyConfig, ConfigUpdateHelper
 
 from pathlib import Path
 
-from .matrix_utils import MatrixUtils, UserInfo, validate_matrix_id
-from .pretix import Pretix, AttendeeMatrixInformation
+from .matrix_utils import (
+    MatrixUtils,
+    UserInfo,
+    normalize_matrix_id,
+    FEDORA_HOMESERVER,
+)
+from .pretix import Pretix, AttendeeMatrixInformation, question_id_to_header
 # ACCEPTED_TOPICS = ["issue.new", "git.receive", "pull-request.new"]
 
 NL = "      \n"
@@ -251,12 +256,20 @@ class EventManagement(Plugin):
         if not success:
             self.log.info(result_dict.get("error"))
             self.log.debug(result_dict.get("debug"))
+            # Pretix still expects a 2xx so it doesn't retry a webhook we intentionally
+            # rejected (wrong action, already-processed order, etc.).
+            return Response()
 
         # this assumes we are only really processing one new attendee at a time
         organizer = result_dict.get("organizer")
         event = result_dict.get("event")
         attendees = result_dict.get("data")
-        # order may already be processed (because im messing with it), so this may be empty
+        # order may already be processed (or otherwise filtered out), so this may be empty
+        if not attendees:
+            self.log.debug(
+                f"webhook for {organizer}/{event} produced no attendees to process"
+            )
+            return Response()
         order_id = attendees[0].order_code
         matrix_id = attendees[0].matrix_id
         order = self.pretix.fetch_orders(organizer, event, order_code=order_id)
@@ -346,6 +359,42 @@ class EventManagement(Plugin):
         await evt.respond(f"maubot-events version {self.loader.meta.version}")
 
 
+    def _resolve_attendee_matrix_id(self, attendee: AttendeeMatrixInformation):
+        """Resolve an attendee to a usable, normalized Matrix ID, or None if unrecoverable.
+
+        Resolution order:
+          1. The Matrix ID the attendee supplied, run through safe normalization
+             (trim, lowercase, prepend a missing ``@``).
+          2. Fall back to their FAS username as ``@<fas>:fedora.im`` — Fedora accounts
+             map directly onto the fedora.im homeserver.
+
+        We deliberately do NOT guess a homeserver for arbitrary bare names: inviting a
+        nonexistent ``@name:fedora.im`` costs a ~60s federation timeout per bad id.
+        """
+        raw = attendee.matrix_id
+        order_id = attendee.order_code
+        self.log.debug(f"received username `{raw}` to invite from order {order_id}")
+
+        try:
+            resolved = normalize_matrix_id(raw)
+            self.log.debug(f"matrix ID normalized to {resolved}")
+            return resolved
+        except ValueError as e:
+            self.log.debug(f"matrix ID `{raw}` was invalid: {e}")
+
+        fas = (attendee.extra or {}).get(question_id_to_header("fas"), "")
+        fas = fas.strip().lstrip("@") if isinstance(fas, str) else ""
+        if fas:
+            candidate = f"@{fas}:{FEDORA_HOMESERVER}"
+            try:
+                resolved = normalize_matrix_id(candidate)
+                self.log.debug(f"recovered order {order_id} via FAS -> {resolved}")
+                return resolved
+            except ValueError as e:
+                self.log.debug(f"FAS fallback `{candidate}` was invalid: {e}")
+
+        return None
+
     async def invite_attendees(self, room_id:str, attendees:List[AttendeeMatrixInformation]):
         """attempt to invite attendees
 
@@ -354,35 +403,126 @@ class EventManagement(Plugin):
             attendees (List[AttendeeMatrixInformation]): the list of attendees to invite
 
         Returns:
-            List[AttendeeMatrixInformation]: the list of users with invalid matrix IDs.
-            If fully successful this will be an empty list
+            List[AttendeeMatrixInformation]: the attendees who were NOT successfully
+            invited — either because their Matrix ID could not be resolved, or because
+            the invite itself failed (e.g. a federation timeout). Empty on full success.
         """
-        valid_users = {} #users in Dict[str,UserInfo] format for the matrix APIs
-        invalid_users = [] # list of AttendeeMatrixInformation
+        valid_users = {}             # resolved mxid -> UserInfo (for the matrix APIs)
+        resolved_to_attendee = {}    # resolved mxid -> AttendeeMatrixInformation
+        invalid_users = []           # attendees we couldn't resolve to a valid mxid
         for matrix_attendee in attendees:
-            matrix_id = matrix_attendee.matrix_id
-            order_id = matrix_attendee.order_code
-            self.log.debug(f"received username `{matrix_id}` to invite from order {order_id}")
-            # validate matrix id
-            try:
-                validated_id = validate_matrix_id(matrix_id, fix_at_sign=True)
-            except ValueError as e:
-                self.log.debug(f"matrix ID was invalid for the following reason: {e}")
+            resolved = self._resolve_attendee_matrix_id(matrix_attendee)
+            if resolved is None:
                 invalid_users.append(matrix_attendee)
                 continue
-            else:
-                self.log.debug(f"matrix ID was valid")
-                valid_users[validated_id] = UserInfo()
+            valid_users[resolved] = UserInfo()
+            resolved_to_attendee[resolved] = matrix_attendee
 
-        if len(valid_users) > 0:
-            await self.matrix_utils.ensure_room_invitees(room_id, valid_users)
+        failed_at_matrix = {}
+        if valid_users:
+            failed_at_matrix = await self.matrix_utils.ensure_room_invitees(room_id, valid_users)
         else:
             self.log.debug(f"no users with valid Matrix IDs to invite")
 
-        return invalid_users
+        # attendees whose mxid resolved but whose invite failed at the Matrix layer
+        matrix_failed = [
+            resolved_to_attendee[mxid]
+            for mxid in failed_at_matrix
+            if mxid in resolved_to_attendee
+        ]
+
+        return invalid_users + matrix_failed
 
 
-    @command.new(name="batchinvite", help="invite attendees from pretix")
+    async def _resolve_invite_targets(
+        self,
+        organizer: str,
+        event: str,
+        attendees: List[AttendeeMatrixInformation],
+    ) -> tuple:
+        """Resolve which rooms each attendee should be invited into.
+
+        Returns a tuple ``(targets, unresolvable)`` where ``targets`` maps resolved
+        room_id -> list[AttendeeMatrixInformation], and ``unresolvable`` is the list of
+        room aliases that could not be resolved. Mirrors webhook fan-out logic but
+        operates on a batch.
+        """
+        alias_cache = {}  # alias str -> resolved room_id str
+
+        async def resolve_room(matrix_id: str) -> str:
+            if matrix_id.startswith("#"):
+                if matrix_id not in alias_cache:
+                    try:
+                        info = await self.client.resolve_room_alias(matrix_id)
+                        alias_cache[matrix_id] = info.room_id
+                    except Exception as e:
+                        self.log.warning(f"Failed to resolve alias {matrix_id}: {e}")
+                        alias_cache[matrix_id] = None
+                return alias_cache[matrix_id]
+            return matrix_id
+
+        targets = {}  # room_id -> list[AttendeeMatrixInformation]
+        unresolvable = []
+
+        for attendee in attendees:
+            try:
+                order = self.pretix.fetch_orders(organizer, event, order_code=attendee.order_code)
+                position = order[0].get("positions")[0]
+                item_id = position.get("item")
+                variant_id = position.get("variation")
+                rooms = self.room_mapping.rooms_by_ticket_variant(organizer, event, item_id, variant_id)
+            except Exception as e:
+                self.log.warning(f"Failed to fetch order for {attendee.order_code}: {e}. Falling back to event-wide rooms.")
+                rooms = list(self.room_mapping.rooms_by_event(organizer, event))
+
+            if not rooms:
+                rooms = list(self.room_mapping.rooms_by_event(organizer, event))
+
+            for room in rooms:
+                resolved = await resolve_room(room.matrix_id)
+                if resolved is None:
+                    if room.matrix_id not in unresolvable:
+                        unresolvable.append(room.matrix_id)
+                    continue
+                if resolved not in targets:
+                    targets[resolved] = []
+                if attendee not in targets[resolved]:
+                    targets[resolved].append(attendee)
+
+        return targets, unresolvable
+
+    def _format_invite_summary(self, per_room_stats, header_lines=None, unresolvable=None):
+        """Render a per-room invite summary.
+
+        per_room_stats: list of dicts with keys: room_id, invited, failed, failed_ids
+        header_lines: optional list of str prepended before the room breakdown
+        unresolvable: optional list of alias strings that could not be resolved
+        """
+        lines = []
+        if header_lines:
+            lines.extend(header_lines)
+
+        n = len(per_room_stats)
+        lines.append(f"Invited across {n} room(s):")
+
+        total_invited = 0
+        total_failed = 0
+        for stat in per_room_stats:
+            room_line = f"* {stat['room_id']}: invited {stat['invited']}, failed {stat['failed']}"
+            if stat['failed_ids']:
+                room_line += f", failed ids: {', '.join(stat['failed_ids'])}"
+            lines.append(room_line)
+            total_invited += stat['invited']
+            total_failed += stat['failed']
+
+        lines.append(f"Totals: invited {total_invited}, failed {total_failed}")
+
+        if unresolvable:
+            lines.append(f"Skipped (unresolvable): {', '.join(unresolvable)}")
+
+        return NL.join(lines)
+
+    @command.new(name="batchinvite", help="invite new attendees from pretix (append `full` to re-sync everyone)")
     @command.argument("pretix_url", pass_raw=True, required=True)
     async def batchinvite(self, evt: MessageEvent, pretix_url: str) -> None:
         # permission check
@@ -390,34 +530,158 @@ class EventManagement(Plugin):
             await evt.reply(f"{evt.sender} is not allowed to execute this command")
             return
 
-        #TODO: check if pretix URL is blank and reply with warning or use the stored events for the current room
-
-        room_id = evt.room_id
-
         if not self.pretix.has_token:
             await evt.reply(f"Error when testing authentication. This is may be due to a lack of authorization to access the configured pretix instance to query event registrations. Please run the `!authorize` command to authorize access")
             return
-        
-        # TODO: allow this url to be optional if a room is mapped
+
+        # batchinvite is additive by default (only unprocessed orders). A trailing
+        # `full`/`sync` token re-processes every attendee regardless of prior state.
+        parts = pretix_url.split()
+        full_sync = len(parts) >= 2 and parts[-1].lower() in ("full", "sync", "--full", "--sync")
+        if full_sync:
+            pretix_url = " ".join(parts[:-1])
+
         try:
             organizer, event = Pretix.parse_invite_url(pretix_url)
         except ValueError as e:
-            await evt.reply(e)
-            # await evt.reply(f"Invalid input - please enter")
+            await evt.reply(str(e))
+            return
 
         self.log.debug(f"organizer: {organizer}")
         self.log.debug(f"event: {event}")
+        self.log.debug(f"full_sync: {full_sync}")
 
         data = self.pretix.fetch_data(organizer, event)
-        data = self.pretix.extract_answers(data, filter_processed=True)
+        data = self.pretix.extract_answers(data, filter_processed=not full_sync)
 
-        failed_invites = await self.invite_attendees(room_id, data)
-        # TODO: mark successful ones as processed?
+        if not data:
+            msg = (
+                "No attendees found for this event."
+                if full_sync
+                else "No unprocessed attendees to invite. (append `full` to re-sync everyone)"
+            )
+            await evt.reply(msg)
+            return
 
-        self.log.debug(f"failed invites {failed_invites}")
-                
-        # Ensure users have correct power levels
-        # await self.matrix_utils.ensure_room_power_levels(room_id, all_users)
+        if not self.room_mapping.rooms_by_event(organizer, event):
+            await evt.reply(f"No rooms are mapped to {organizer}/{event}. Run !setroom in the target room(s) first.")
+            return
+
+        targets, unresolvable = await self._resolve_invite_targets(organizer, event, data)
+
+        if not targets:
+            await evt.reply(f"No rooms are mapped to {organizer}/{event}. Run !setroom in the target room(s) first.")
+            return
+
+        per_room_stats = []
+        attendees_by_code = {}     # order_code -> attendee (every attendee we targeted)
+        failed_codes = set()       # order_code of any attendee that failed in any room
+        for room_id, attendees_for_room in targets.items():
+            failed = await self.invite_attendees(room_id, attendees_for_room)
+            invited = len(attendees_for_room) - len(failed)
+            per_room_stats.append({
+                "room_id": room_id,
+                "invited": invited,
+                "failed": len(failed),
+                "failed_ids": [a.matrix_id for a in failed],
+            })
+            for a in attendees_for_room:
+                attendees_by_code[a.order_code] = a
+            for a in failed:
+                failed_codes.add(a.order_code)
+
+        # mark as processed only attendees that succeeded in every room they targeted;
+        # leaving failures unprocessed lets a later run retry them (or pick them up once
+        # the attendee fixes a bad Matrix ID in pretix).
+        processed = [a for code, a in attendees_by_code.items() if code not in failed_codes]
+        if processed:
+            self.pretix.mark_as_processed(processed)
+
+        summary = self._format_invite_summary(per_room_stats, unresolvable=unresolvable)
+        await evt.reply(summary)
+
+    @command.new(name="testinvite", help="invite only admins or specific order IDs for testing (usage: <pretix_url> admins | orders <id1> <id2> ...)")
+    @command.argument("pretix_url", pass_raw=False, required=True)
+    @command.argument("mode_and_ids", pass_raw=True, required=True)
+    async def testinvite(self, evt: MessageEvent, pretix_url: str, mode_and_ids: str) -> None:
+        # permission check
+        if evt.sender not in self.config["allowlist"]:
+            await evt.reply(f"{evt.sender} is not allowed to execute this command")
+            return
+
+        if not self.pretix.has_token:
+            await evt.reply("Error when testing authentication. This may be due to a lack of authorization to access the configured pretix instance. Please run the `!authorize` command to authorize access")
+            return
+
+        try:
+            organizer, event = Pretix.parse_invite_url(pretix_url)
+        except ValueError as e:
+            await evt.reply(str(e))
+            return
+
+        tokens = mode_and_ids.split()
+        if not tokens:
+            await evt.reply("Usage: `!testinvite <pretix_url> admins` or `!testinvite <pretix_url> orders <id1> <id2> ...`")
+            return
+
+        mode = tokens[0].lower()
+        if mode not in ("admins", "orders"):
+            await evt.reply(f"Unknown mode `{mode}`. Valid modes are `admins` or `orders`.")
+            return
+
+        if mode == "orders" and len(tokens) < 2:
+            await evt.reply("Mode `orders` requires at least one order ID. Usage: `!testinvite <pretix_url> orders <id1> <id2> ...`")
+            return
+
+        data = self.pretix.fetch_data(organizer, event)
+        # filter_processed=False so test invites are never skipped due to prior state
+        data = self.pretix.extract_answers(data, filter_processed=False)
+
+        if mode == "admins":
+            allowlist = set(self.config["allowlist"])
+            filtered = [a for a in data if a.matrix_id in allowlist]
+            mode_desc = "admins"
+        else:
+            order_ids = set(tokens[1:])
+            filtered = [a for a in data if a.order_code in order_ids]
+            mode_desc = f"orders {', '.join(order_ids)}"
+
+        total = len(data)
+        matched = len(filtered)
+
+        if matched == 0:
+            await evt.reply(f"No attendees matched filter ({mode_desc}) out of {total} total. No invites sent.")
+            return
+
+        if not self.room_mapping.rooms_by_event(organizer, event):
+            await evt.reply(f"No rooms are mapped to {organizer}/{event}. Run !setroom in the target room(s) first.")
+            return
+
+        targets, unresolvable = await self._resolve_invite_targets(organizer, event, filtered)
+
+        if not targets:
+            await evt.reply(f"No rooms are mapped to {organizer}/{event}. Run !setroom in the target room(s) first.")
+            return
+
+        per_room_stats = []
+        for room_id, attendees_for_room in targets.items():
+            failed = await self.invite_attendees(room_id, attendees_for_room)
+            invited = len(attendees_for_room) - len(failed)
+            per_room_stats.append({
+                "room_id": room_id,
+                "invited": invited,
+                "failed": len(failed),
+                "failed_ids": [a.matrix_id for a in failed],
+            })
+
+        header_lines = [
+            f"testinvite complete (filter: {mode_desc})",
+            f"Attendees in event: {total}",
+            f"Matched filter: {matched}",
+        ]
+        summary = self._format_invite_summary(per_room_stats, header_lines=header_lines, unresolvable=unresolvable)
+        await evt.reply(summary)
+        # intentionally do NOT call mark_as_processed so real batchinvite still works
 
     @command.new(name="setroom", help="associate the current matrix room with a specified pretix event")
     @command.argument("pretix_url", pass_raw=False, required=True)
