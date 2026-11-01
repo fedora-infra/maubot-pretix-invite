@@ -2,5 +2,12 @@ pretix_instance_url: https://pretix.eu/
 pretix_client_id: ID_HERE
 pretix_client_secret: SECRET_HERE
 pretix_redirect_url: http://url.to/this/bot/callback
+# Allow the OAuth2 token exchange with pretix to proceed over a connection that
+# oauthlib does not consider HTTPS. Only needed when the bot reaches pretix
+# through a TLS-terminating proxy that presents the token endpoint to the bot as
+# http:// (some reverse-proxy setups). Leave false unless you actually hit an
+# oauthlib InsecureTransportError; enabling it sets OAUTHLIB_INSECURE_TRANSPORT=1,
+# which disables oauthlib's transport-security check for the whole process.
+allow_insecure_oauth_transport: false
 allowlist:
   - "@aaronhale:matrixbots.tinystage.test"
