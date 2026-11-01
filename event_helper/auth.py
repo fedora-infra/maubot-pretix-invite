@@ -38,6 +38,9 @@ class Token:
 
         data = asdict(self)
         del data["expires_at"]
-        data["expires_in"] = expires_in.seconds
+        # total_seconds(), clamped at 0: timedelta.seconds only returns the
+        # sub-day remainder (0-86399), so a 24h token would serialize as 0, and
+        # an already-expired token would wrap to a large positive value.
+        data["expires_in"] = max(0, int(expires_in.total_seconds()))
         data["expires_at"] = expires_at.timestamp()
         return data
